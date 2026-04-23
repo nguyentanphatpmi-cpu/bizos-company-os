@@ -30,7 +30,28 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </ul>
         </div>
 
-        <div className="text-xs text-white/60">© 2026 BIZOS Demo</div>
+        <div className="text-xs text-white/60 space-y-1">
+          <div>
+            by{" "}
+            <a href="mailto:alexle@titanlabs.vn" className="underline hover:text-white">
+              Alex Le
+            </a>{" "}
+            · alexle@titanlabs.vn
+          </div>
+          <div>
+            Donate PayPal:{" "}
+            <a
+              href="https://www.paypal.com/paypalme/sai211dn"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-white"
+            >
+              sai211dn@gmail.com
+            </a>
+          </div>
+          <div>Cần deploy / tuỳ biến cho công ty? Liên hệ alexle@titanlabs.vn</div>
+          <div>Need a custom deployment? Contact alexle@titanlabs.vn</div>
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 lg:p-12">
