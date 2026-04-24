@@ -7,26 +7,35 @@ import { KpiCard } from "@/components/kpi/KpiCard";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { StatChip } from "@/components/widgets/StatChip";
+import { fetchReports, fetchReportSchedules } from "@/lib/queries";
 import { FileText, Download, Calendar, Mail, Clock, FileSpreadsheet, Sparkles } from "lucide-react";
-
-const reports = [
-  { id: "r1", title: "Báo cáo KPI công ty tháng 4/2026", kind: "kpi_company", period: "2026-04", generated_at: "2026-04-23T07:00:00Z", size: "1.2 MB", format: "PDF", downloads: 4 },
-  { id: "r2", title: "Báo cáo tài chính Q1/2026", kind: "finance_quarterly", period: "2026-Q1", generated_at: "2026-04-15T09:00:00Z", size: "3.4 MB", format: "PDF", downloads: 12 },
-  { id: "r3", title: "Payroll tháng 3/2026", kind: "payroll", period: "2026-03", generated_at: "2026-04-05T16:30:00Z", size: "820 KB", format: "XLSX", downloads: 8 },
-  { id: "r4", title: "Báo cáo hiệu suất phòng Sales", kind: "dept_perf", period: "2026-04", generated_at: "2026-04-22T10:00:00Z", size: "640 KB", format: "PDF", downloads: 2 },
-  { id: "r5", title: "Báo cáo tuyển dụng Q1/2026", kind: "recruiting", period: "2026-Q1", generated_at: "2026-04-10T14:00:00Z", size: "430 KB", format: "PDF", downloads: 3 },
-  { id: "r6", title: "Payroll tháng 2/2026", kind: "payroll", period: "2026-02", generated_at: "2026-03-05T16:00:00Z", size: "780 KB", format: "XLSX", downloads: 6 },
-];
-
-const schedules = [
-  { id: "s1", kind: "KPI công ty", cron: "0 7 * * 1", next: "Thứ 2 hằng tuần, 7:00", recipients: 3 },
-  { id: "s2", kind: "Payroll", cron: "0 16 1 * *", next: "Ngày 1 hằng tháng, 16:00", recipients: 2 },
-  { id: "s3", kind: "Cash flow", cron: "0 8 * * *", next: "Hằng ngày, 8:00", recipients: 5 },
-  { id: "s4", kind: "Dept perf", cron: "0 9 1 * *", next: "Ngày 1 hằng tháng, 9:00", recipients: 6 },
-];
 
 export default async function ReportsPage() {
   const { t } = await tServer();
+  const [reportsRaw, schedulesRaw] = await Promise.all([fetchReports(), fetchReportSchedules()]);
+
+  const reports = reportsRaw.map((report) => {
+    const payload = typeof report.payload === "object" && report.payload ? report.payload as Record<string, unknown> : {};
+    return {
+      id: report.id,
+      title: String(payload.title ?? `${report.kind} · ${report.period}`),
+      kind: report.kind,
+      period: report.period,
+      generated_at: report.generated_at,
+      size: String(payload.size ?? "—"),
+      format: String(payload.format ?? "PDF"),
+      downloads: Number(payload.downloads ?? 0),
+    };
+  });
+
+  const schedules = schedulesRaw.map((schedule) => ({
+    id: schedule.id,
+    kind: schedule.kind,
+    cron: schedule.cron,
+    next: schedule.cron,
+    recipients: Array.isArray(schedule.recipients) ? schedule.recipients.length : 0,
+  }));
+
   const columns: Column<(typeof reports)[number]>[] = [
     {
       key: "title",
@@ -125,6 +134,7 @@ export default async function ReportsPage() {
           <CardContent>
             <ProgressList
               rows={reports
+                .slice()
                 .sort((a, b) => b.downloads - a.downloads)
                 .slice(0, 5)
                 .map((r) => ({

@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiHeroDonut } from "@/components/kpi/KpiHeroDonut";
 import { StatChip } from "@/components/widgets/StatChip";
 import { fetchAlerts } from "@/lib/queries";
+import { resolveAlertAction } from "@/app/(app)/governance/actions";
 import { AlertTriangle, AlertCircle, Info, AlertOctagon, BellRing, Clock, Shield } from "lucide-react";
 
 const iconBy = {
@@ -156,10 +157,15 @@ export default async function AlertsPage() {
                   </pre>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" type="button">
                     Ẩn
                   </Button>
-                  <Button size="sm">Resolve</Button>
+                  <form action={resolveAlertAction}>
+                    <input type="hidden" name="alertId" value={a.id} />
+                    <Button size="sm" type="submit">
+                      Resolve
+                    </Button>
+                  </form>
                 </div>
               </div>
             );

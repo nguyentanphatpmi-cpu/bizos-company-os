@@ -746,6 +746,34 @@ create table if not exists notifications (
   created_at timestamptz not null default now()
 );
 
+create table if not exists user_preferences (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id) on delete cascade,
+  auth_user_id uuid not null unique,
+  locale text not null default 'vi',
+  timezone text not null default 'Asia/Ho_Chi_Minh',
+  date_format text not null default 'DD/MM/YYYY',
+  theme text not null default 'light',
+  compact_sidebar boolean not null default false,
+  notification_settings jsonb not null default '{}'::jsonb,
+  security_settings jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists user_sessions (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id) on delete cascade,
+  auth_user_id uuid not null,
+  device_label text not null,
+  platform text,
+  browser text,
+  location_label text,
+  ip_address text,
+  last_seen_at timestamptz not null default now(),
+  is_current boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists audit_logs (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references companies(id) on delete cascade,
@@ -801,7 +829,7 @@ declare r record;
 begin
   for r in select unnest(array[
     'companies','departments','employees','kpis','kpi_formulas','kpi_actuals',
-    'tasks','sop_documents','app_settings'
+    'tasks','sop_documents','app_settings','user_preferences'
   ]) as tbl
   loop
     execute format(

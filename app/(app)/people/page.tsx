@@ -4,10 +4,12 @@ import { tServer } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { fetchEmployees, fetchDepartments, fetchKpis } from "@/lib/queries";
+import { createEmployeeAction } from "@/app/(app)/workspace/actions";
 import { formatCompactVND } from "@/lib/utils";
 import { Users, UserPlus, Briefcase, TrendingUp } from "lucide-react";
 import type { Employee } from "@/types/domain";
@@ -116,6 +118,32 @@ export default async function PeoplePage() {
           icon={<UserPlus className="h-3.5 w-3.5" />}
         />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-sm">Thêm nhân sự mới</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={createEmployeeAction} className="grid gap-3 md:grid-cols-6">
+            <Input name="fullName" placeholder="Họ tên" required />
+            <Input name="email" type="email" placeholder="Email công việc" required />
+            <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Chọn phòng ban</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.name}</option>
+              ))}
+            </select>
+            <select name="managerId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Chọn manager</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>{employee.full_name}</option>
+              ))}
+            </select>
+            <Input name="baseSalary" type="number" placeholder="Lương cơ bản" required />
+            <Button type="submit">Tạo nhân sự</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <Card className="lg:col-span-4">

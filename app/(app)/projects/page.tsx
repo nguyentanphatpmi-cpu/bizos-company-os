@@ -4,12 +4,14 @@ import { tServer } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiHeroDonut } from "@/components/kpi/KpiHeroDonut";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { StatChip } from "@/components/widgets/StatChip";
 import { fetchProjects, fetchEmployees } from "@/lib/queries";
+import { createProjectAction } from "@/app/(app)/workspace/actions";
 import { formatCompactVND } from "@/lib/utils";
 import type { Project } from "@/types/domain";
 import { FolderKanban, CheckCircle2, Wallet, Target } from "lucide-react";
@@ -79,6 +81,25 @@ export default async function ProjectsPage() {
         <KpiCard label="Tổng budget" value={formatCompactVND(totalBudget)} accent="amber" icon={<Wallet className="h-3.5 w-3.5" />} />
         <KpiCard label="Sắp deadline" value="2" accent="red" icon={<Target className="h-3.5 w-3.5" />} />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader><CardTitle>Tạo dự án mới</CardTitle></CardHeader>
+        <CardContent>
+          <form action={createProjectAction} className="grid gap-3 md:grid-cols-6">
+            <Input name="name" placeholder="Tên dự án" required />
+            <Input name="code" placeholder="Mã dự án" />
+            <select name="ownerId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Owner</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>{employee.full_name}</option>
+              ))}
+            </select>
+            <Input name="budget" type="number" placeholder="Budget" required />
+            <Input name="startsAt" type="date" />
+            <Button type="submit">Tạo dự án</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <Card className="lg:col-span-4">

@@ -47,29 +47,29 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "rounded-xl bg-white px-4 py-3.5",
-        "shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.04)]",
-        "ring-1 ring-zinc-100",
+        "rounded-[26px] bg-white px-4.5 py-4",
+        "shadow-[var(--shadow-card)]",
+        "ring-1 ring-[var(--line-soft)]/90",
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wide whitespace-nowrap overflow-hidden">
+        <div className="flex items-center gap-2 text-[11px] font-medium text-[var(--text-soft)] whitespace-nowrap overflow-hidden">
           {icon && (
             <span
               className={cn(
-                "h-5 w-5 rounded-md flex items-center justify-center shrink-0",
+                "h-8 w-8 rounded-2xl flex items-center justify-center shrink-0",
                 ACCENT_BG[accent],
               )}
             >
               {icon}
             </span>
           )}
-          <span className="truncate normal-case tracking-normal">{label}</span>
+          <span className="truncate">{label}</span>
         </div>
         {typeof delta === "number" && (
           <span
             className={cn(
-              "shrink-0 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+              "shrink-0 inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-[10px] font-semibold",
               positive ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700",
             )}
           >
@@ -78,16 +78,16 @@ export function KpiCard({
           </span>
         )}
       </div>
-      <div className="mt-1 text-[22px] leading-7 font-bold tracking-tight text-zinc-900 whitespace-nowrap truncate">
+      <div className="mt-2 text-[28px] leading-8 font-bold tracking-tight text-[var(--text-strong)] whitespace-nowrap truncate">
         {value}
       </div>
-      {hint && <div className="text-[11px] text-zinc-400 truncate mt-0.5">{hint}</div>}
+      {hint && <div className="text-[11px] text-[var(--text-soft)] truncate mt-1">{hint}</div>}
       {spark && spark.length > 1 ? (
-        <div className="-mx-1 mt-1">
+        <div className="-mx-1 mt-2">
           <MiniSpark data={spark} color={color} height={28} />
         </div>
       ) : (
-        <div className="mt-2 h-[3px] w-full rounded-full bg-zinc-100 overflow-hidden">
+        <div className="mt-3 h-[4px] w-full rounded-full bg-[var(--surface-alt)] overflow-hidden">
           <div
             className="h-full rounded-full"
             style={{

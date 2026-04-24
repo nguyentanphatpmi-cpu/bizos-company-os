@@ -3,12 +3,14 @@ import { tServer } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiHeroDonut } from "@/components/kpi/KpiHeroDonut";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { StatChip } from "@/components/widgets/StatChip";
 import { fetchRequisitions, fetchDepartments } from "@/lib/queries";
+import { createRequisitionAction } from "@/app/(app)/workspace/actions";
 import type { JobRequisition } from "@/types/domain";
 import { UserPlus, Users, Clock, Award } from "lucide-react";
 
@@ -78,6 +80,23 @@ export default async function RecruitingPage() {
         <KpiCard label="Time-to-hire TB" value="38 ngày" accent="amber" icon={<Clock className="h-3.5 w-3.5" />} spark={[45, 42, 40, 38, 38, 38]} delta={-15} />
         <KpiCard label="Skill gap" value={String(skillGaps.length)} accent="red" icon={<Award className="h-3.5 w-3.5" />} />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader><CardTitle className="text-sm">Mở requisition mới</CardTitle></CardHeader>
+        <CardContent>
+          <form action={createRequisitionAction} className="grid gap-3 md:grid-cols-4">
+            <Input name="title" placeholder="Vị trí tuyển" required />
+            <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Phòng ban</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.name}</option>
+              ))}
+            </select>
+            <Input name="headcount" type="number" placeholder="Headcount" defaultValue="1" />
+            <Button type="submit">Tạo requisition</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <Card className="lg:col-span-4">

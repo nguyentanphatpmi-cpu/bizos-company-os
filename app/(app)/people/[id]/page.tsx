@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/kpi/KpiCard";
-import { KpiHeroDonut } from "@/components/kpi/KpiHeroDonut";
 import { KpiStatusBadge } from "@/components/kpi/KpiStatusBadge";
 import { AreaTrend } from "@/components/charts/AreaTrend";
 import { DataTable, type Column } from "@/components/tables/DataTable";

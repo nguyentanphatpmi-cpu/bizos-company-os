@@ -1,16 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { appEnv, isDemoMode } from "@/lib/env";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!appEnv.supabaseUrl || !appEnv.supabaseAnonKey) {
+    if (isDemoMode()) return supabaseResponse;
+    const redirect = request.nextUrl.clone();
+    redirect.pathname = "/login";
+    redirect.searchParams.set("error", "Thiếu cấu hình Supabase cho môi trường hiện tại.");
+    return NextResponse.redirect(redirect);
+  }
 
-  // Demo mode: không có env → để mọi trang hiển thị với demo data, bỏ qua auth guard.
-  if (!url || !anon) return supabaseResponse;
-
-  const supabase = createServerClient(url, anon, {
+  const supabase = createServerClient(appEnv.supabaseUrl, appEnv.supabaseAnonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();

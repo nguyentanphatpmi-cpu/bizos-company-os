@@ -3,12 +3,14 @@ import { tServer } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiHeroDonut } from "@/components/kpi/KpiHeroDonut";
 import { MiniCalendar } from "@/components/widgets/MiniCalendar";
 import { ActivityFeed } from "@/components/widgets/ActivityFeed";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { fetchTasks, fetchEmployees, fetchKpis } from "@/lib/queries";
+import { createTaskAction, recordTaskOutputAction } from "@/app/(app)/workspace/actions";
 import type { Task } from "@/types/domain";
 import { CheckCircle2, AlertTriangle, Target, ListChecks, Zap, Wrench } from "lucide-react";
 
@@ -79,6 +81,54 @@ export default async function OperationsPage() {
         <KpiCard label="Overdue" value={String(overdue.length)} accent="red" icon={<AlertTriangle className="h-3.5 w-3.5" />} />
         <KpiCard label="Urgent / High" value={String(urgent)} accent="amber" icon={<Zap className="h-3.5 w-3.5" />} />
         <KpiCard label="On-time rate" value={`${onTime}%`} accent="cyan" icon={<Target className="h-3.5 w-3.5" />} spark={[85, 87, 88, 90, 91, onTime]} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Tạo task mới</CardTitle></CardHeader>
+          <CardContent>
+            <form action={createTaskAction} className="grid gap-3 md:grid-cols-3">
+              <Input name="title" placeholder="Tên task" required />
+              <select name="assigneeId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+                <option value="">Assignee</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>{employee.full_name}</option>
+                ))}
+              </select>
+              <select name="linkedKpiId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+                <option value="">Linked KPI</option>
+                {kpis.map((kpi) => (
+                  <option key={kpi.id} value={kpi.id}>{kpi.code ?? kpi.name}</option>
+                ))}
+              </select>
+              <Input name="dueDate" type="date" />
+              <select name="priority" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+                <option value="normal">Priority</option>
+                <option value="low">Low</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+              <Button type="submit">Tạo task</Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Ghi output task</CardTitle></CardHeader>
+          <CardContent>
+            <form action={recordTaskOutputAction} className="grid gap-3 md:grid-cols-4">
+              <select name="taskId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+                <option value="">Chọn task</option>
+                {tasks.map((task) => (
+                  <option key={task.id} value={task.id}>{task.title}</option>
+                ))}
+              </select>
+              <Input name="outputType" placeholder="output_type" defaultValue="deliverable" />
+              <Input name="value" type="number" placeholder="Giá trị output" required />
+              <Button type="submit">Ghi output</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">

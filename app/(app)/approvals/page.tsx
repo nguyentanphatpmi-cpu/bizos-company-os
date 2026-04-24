@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/kpi/KpiCard";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { StatChip } from "@/components/widgets/StatChip";
 import { fetchApprovals, fetchEmployees } from "@/lib/queries";
+import { approveRequestAction, rejectRequestAction } from "@/app/(app)/governance/actions";
 import { Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
 
 const kindLabel: Record<string, string> = {
@@ -140,10 +141,16 @@ export default async function ApprovalsPage() {
                 </div>
                 {a.status === "pending" && (
                   <div className="flex gap-2 shrink-0">
-                    <Button size="sm" variant="outline">
-                      Từ chối
-                    </Button>
-                    <Button size="sm">Duyệt</Button>
+                    <form action={rejectRequestAction}>
+                      <input type="hidden" name="approvalId" value={a.id} />
+                      <Button size="sm" variant="outline" type="submit">
+                        Từ chối
+                      </Button>
+                    </form>
+                    <form action={approveRequestAction}>
+                      <input type="hidden" name="approvalId" value={a.id} />
+                      <Button size="sm" type="submit">Duyệt</Button>
+                    </form>
                   </div>
                 )}
               </div>

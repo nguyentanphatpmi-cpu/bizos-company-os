@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { KpiStatusBadge } from "@/components/kpi/KpiStatusBadge";
 import { fetchDepartments, fetchEmployees, fetchKpis, fetchKpiActuals, fetchKpiTargets } from "@/lib/queries";
+import { createDepartmentAction } from "@/app/(app)/workspace/actions";
 import { buildKpiRows } from "@/lib/kpi/cascade";
 import { formatCompactVND } from "@/lib/utils";
 import type { Department } from "@/types/domain";
@@ -110,6 +112,21 @@ export default async function DepartmentsPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Tạo phòng ban mới</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={createDepartmentAction} className="grid gap-3 md:grid-cols-5">
+            <Input name="name" placeholder="Tên phòng ban" required />
+            <Input name="code" placeholder="Mã" />
+            <Input name="budgetMonthly" type="number" placeholder="Budget tháng" required />
+            <Input name="scope" placeholder="Phạm vi trách nhiệm" />
+            <Button type="submit">Tạo phòng ban</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">

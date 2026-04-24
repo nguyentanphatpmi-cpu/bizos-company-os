@@ -3,11 +3,13 @@ import { tServer } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { StatChip } from "@/components/widgets/StatChip";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { BookOpen, FileCheck, Shield, CheckSquare, FileText } from "lucide-react";
 import { fetchSops, fetchDepartments } from "@/lib/queries";
+import { createSopAction } from "@/app/(app)/workspace/actions";
 
 export default async function KnowledgePage() {
   const { t } = await tServer();
@@ -22,6 +24,16 @@ export default async function KnowledgePage() {
   const avgVersion = sops.length
     ? (sops.reduce((s, d) => s + d.version, 0) / sops.length).toFixed(1)
     : "0";
+  const sopPopularity = sops.map((s, index) => {
+    const value = 76 + ((s.version + index * 7) % 21);
+    return {
+      label: s.title,
+      value,
+      max: 100,
+      right: `${value} lượt xem`,
+      color: "#6366f1",
+    };
+  });
 
   return (
     <div>
@@ -38,6 +50,23 @@ export default async function KnowledgePage() {
         <KpiCard label="Version TB" value={avgVersion} accent="amber" icon={<Shield className="h-3.5 w-3.5" />} />
         <KpiCard label="Checklist" value="12" accent="cyan" icon={<CheckSquare className="h-3.5 w-3.5" />} />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader><CardTitle className="text-sm">Tạo SOP mới</CardTitle></CardHeader>
+        <CardContent>
+          <form action={createSopAction} className="grid gap-3 md:grid-cols-4">
+            <Input name="title" placeholder="Tên SOP" required />
+            <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Phòng ban</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.name}</option>
+              ))}
+            </select>
+            <Input name="body" placeholder="Mô tả ngắn / nội dung" />
+            <Button type="submit">Tạo SOP</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <Card className="lg:col-span-8">
@@ -87,20 +116,12 @@ export default async function KnowledgePage() {
         <div className="lg:col-span-4 space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">SOP phổ biến</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ProgressList
-                rows={sops.map((s) => ({
-                  label: s.title,
-                  value: 75 + Math.round(Math.random() * 25),
-                  max: 100,
-                  right: `${75 + Math.round(Math.random() * 25)} lượt xem`,
-                  color: "#6366f1",
-                }))}
-              />
-            </CardContent>
-          </Card>
+            <CardTitle className="text-sm">SOP phổ biến</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProgressList rows={sopPopularity} />
+          </CardContent>
+        </Card>
 
           <Card>
             <CardHeader className="pb-2">

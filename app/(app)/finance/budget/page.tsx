@@ -2,11 +2,15 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, type Column } from "@/components/tables/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { fetchDepartments } from "@/lib/queries";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { fetchDepartments, fetchAccounting } from "@/lib/queries";
+import { saveDepartmentBudgetAction } from "@/app/(app)/workspace/actions";
+import { buildBudgetVarianceRows } from "@/lib/finance/statements";
 import { formatCompactVND, formatPercent } from "@/lib/utils";
 
 export default async function BudgetPage() {
-  const departments = await fetchDepartments();
+  const [departments, entries] = await Promise.all([fetchDepartments(), fetchAccounting()]);
 
   type Row = {
     id: string;
@@ -17,14 +21,7 @@ export default async function BudgetPage() {
     variance_pct: number;
   };
 
-  // Mock actuals ~ 85-110% of planned.
-  const rows: Row[] = departments.map((d) => {
-    const factor = 0.85 + (d.id.charCodeAt(d.id.length - 1) % 25) / 100;
-    const actual = Math.round(d.budget_monthly * factor);
-    const variance = actual - d.budget_monthly;
-    const variance_pct = (variance / d.budget_monthly) * 100;
-    return { id: d.id, name: d.name, planned: d.budget_monthly, actual, variance, variance_pct };
-  });
+  const rows: Row[] = buildBudgetVarianceRows(departments, entries);
 
   const totalPlanned = rows.reduce((s, r) => s + r.planned, 0);
   const totalActual = rows.reduce((s, r) => s + r.actual, 0);
@@ -77,6 +74,24 @@ export default async function BudgetPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Cập nhật budget phòng ban</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={saveDepartmentBudgetAction} className="grid gap-3 md:grid-cols-3">
+            <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
+              <option value="">Chọn phòng ban</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>{department.name}</option>
+              ))}
+            </select>
+            <Input name="budgetMonthly" type="number" placeholder="Budget tháng mới" required />
+            <Button type="submit">Lưu budget</Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

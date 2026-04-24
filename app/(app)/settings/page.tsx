@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { StatChip } from "@/components/widgets/StatChip";
-import { fetchDepartments, fetchEmployees, demo } from "@/lib/queries";
+import { fetchCompany, fetchDepartments, fetchEmployees } from "@/lib/queries";
+import { updateCompanySettingsAction } from "@/app/(app)/workspace/actions";
 import {
   Building2,
   Users,
@@ -22,14 +23,14 @@ import {
 
 export default async function SettingsPage() {
   const { t } = await tServer();
-  const [departments, employees] = await Promise.all([fetchDepartments(), fetchEmployees()]);
+  const [company, departments, employees] = await Promise.all([fetchCompany(), fetchDepartments(), fetchEmployees()]);
 
   return (
     <div>
       <PageHeader title={t("settings.title")} description={t("settings.subtitle")} />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-        <KpiCard label="Company" value={demo.demoCompany.name} accent="indigo" icon={<Building2 className="h-3.5 w-3.5" />} />
+        <KpiCard label="Company" value={company.name} accent="indigo" icon={<Building2 className="h-3.5 w-3.5" />} />
         <KpiCard label="Phòng ban" value={String(departments.length)} accent="violet" icon={<Users className="h-3.5 w-3.5" />} />
         <KpiCard label="Role" value="7" accent="emerald" icon={<Shield className="h-3.5 w-3.5" />} />
         <KpiCard label="KPI formulas" value="3" accent="amber" icon={<Target className="h-3.5 w-3.5" />} />
@@ -46,25 +47,27 @@ export default async function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="space-y-1.5">
-              <Label>Tên công ty</Label>
-              <Input defaultValue={demo.demoCompany.name} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Mã công ty</Label>
-              <Input defaultValue={demo.demoCompany.code ?? ""} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+            <form action={updateCompanySettingsAction} className="space-y-3">
               <div className="space-y-1.5">
-                <Label>Currency</Label>
-                <Input defaultValue={demo.demoCompany.currency} />
+                <Label>Tên công ty</Label>
+                <Input name="name" defaultValue={company.name} />
               </div>
               <div className="space-y-1.5">
-                <Label>Timezone</Label>
-                <Input defaultValue={demo.demoCompany.timezone} />
+                <Label>Mã công ty</Label>
+                <Input name="code" defaultValue={company.code ?? ""} />
               </div>
-            </div>
-            <Button className="w-full">Lưu thay đổi</Button>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label>Currency</Label>
+                  <Input name="currency" defaultValue={company.currency} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Timezone</Label>
+                  <Input name="timezone" defaultValue={company.timezone} />
+                </div>
+              </div>
+              <Button className="w-full" type="submit">Lưu thay đổi</Button>
+            </form>
           </CardContent>
         </Card>
 

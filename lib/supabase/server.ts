@@ -1,14 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { appEnv, hasSupabaseEnv as hasSupabaseEnvInternal } from "@/lib/env";
 
 export function hasSupabaseEnv() {
-  return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return hasSupabaseEnvInternal();
 }
 
 export async function createClient() {
-  if (!hasSupabaseEnv()) {
+  if (!hasSupabaseEnvInternal()) {
     throw new Error(
       "Supabase env vars chưa được cấu hình (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY).",
     );
@@ -17,8 +16,8 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    appEnv.supabaseUrl,
+    appEnv.supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -40,15 +39,15 @@ export async function createClient() {
 
 // Phiên bản không ném lỗi khi thiếu env — dùng cho layout/query guards.
 export async function createClientOrNull() {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseEnvInternal()) return null;
   return createClient();
 }
 
 export async function createServiceRoleClient() {
   const cookieStore = await cookies();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = appEnv.supabaseServiceRoleKey;
   if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+  return createServerClient(appEnv.supabaseUrl, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

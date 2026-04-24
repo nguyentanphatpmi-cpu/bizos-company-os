@@ -1,103 +1,108 @@
-import { createClientOrNull } from "@/lib/supabase/server";
 import * as demo from "./demo";
-
-// Khi chưa cấu hình Supabase, trả demo dataset để UI vẫn render được.
-// Khi có Supabase, query thật + fallback demo nếu lỗi/không có data.
-
-type Sb = NonNullable<Awaited<ReturnType<typeof createClientOrNull>>>;
-// Supabase query builders là PromiseLike — chấp nhận luôn thay vì Promise để tránh type-check strict lỗi.
-type QueryLike = PromiseLike<{ data: unknown }>;
-
-async function safeFetch<T>(
-  query: (sb: Sb) => QueryLike,
-  fallback: T,
-): Promise<T> {
-  try {
-    const sb = await createClientOrNull();
-    if (!sb) return fallback;
-    const { data } = await query(sb);
-    if (!data || (Array.isArray(data) && data.length === 0)) return fallback;
-    return data as T;
-  } catch {
-    return fallback;
-  }
-}
+import { listDepartments, listEmployees, getCompany } from "@/lib/repositories/org";
+import { listKpis, listKpiActuals, listKpiTargets } from "@/lib/repositories/kpi";
+import { listTasks } from "@/lib/repositories/operations";
+import { listPayrollEntries } from "@/lib/repositories/compensation";
+import { listProjects } from "@/lib/repositories/projects";
+import { listAccountingEntries } from "@/lib/repositories/finance";
+import {
+  listAlerts,
+  listApprovals,
+  listAuditLogs,
+  listReports,
+  listReportSchedules,
+} from "@/lib/repositories/governance";
+import { listSops } from "@/lib/repositories/knowledge";
+import { listRequisitions } from "@/lib/repositories/recruiting";
+import { getProfileScreenData } from "@/lib/repositories/profile";
+import { withDemoFallback } from "@/lib/repositories/shared";
 
 export async function fetchEmployees() {
-  return safeFetch((sb) => sb.from("employees").select("*").order("full_name"), demo.demoEmployees);
+  return listEmployees();
 }
 
 export async function fetchDepartments() {
-  return safeFetch((sb) => sb.from("departments").select("*").order("name"), demo.demoDepartments);
+  return listDepartments();
+}
+
+export async function fetchCompany() {
+  return getCompany();
 }
 
 export async function fetchKpis() {
-  return safeFetch((sb) => sb.from("kpis").select("*"), demo.demoKpis);
+  return listKpis();
 }
 
 export async function fetchKpiActuals(period = "2026-04") {
-  return safeFetch((sb) => sb.from("kpi_actuals").select("*").eq("period", period), demo.demoKpiActuals);
+  return listKpiActuals(period);
 }
 
 export async function fetchKpiTargets(period = "2026-04") {
-  return safeFetch((sb) => sb.from("kpi_targets").select("*").eq("period", period), demo.demoKpiTargets);
+  return listKpiTargets(period);
 }
 
 export async function fetchTasks() {
-  return safeFetch((sb) => sb.from("tasks").select("*").order("due_date"), demo.demoTasks);
+  return listTasks();
 }
 
 export async function fetchPayroll() {
-  return safeFetch((sb) => sb.from("payroll_entries").select("*"), demo.demoPayroll);
+  return listPayrollEntries();
 }
 
 export async function fetchProjects() {
-  return safeFetch((sb) => sb.from("projects").select("*"), demo.demoProjects);
+  return listProjects();
 }
 
 export async function fetchAccounting() {
-  return safeFetch(
-    (sb) => sb.from("accounting_entries").select("*").order("entry_date", { ascending: false }),
-    demo.demoAccounting,
-  );
+  return listAccountingEntries();
 }
 
 export async function fetchAlerts() {
-  return safeFetch(
-    (sb) =>
-      sb.from("alerts").select("*").is("resolved_at", null).order("created_at", { ascending: false }),
-    demo.demoAlerts,
-  );
+  return listAlerts();
 }
 
 export async function fetchApprovals() {
-  return safeFetch(
-    (sb) => sb.from("approvals").select("*").order("created_at", { ascending: false }),
-    demo.demoApprovals,
-  );
+  return listApprovals();
+}
+
+export async function fetchReports() {
+  return listReports();
+}
+
+export async function fetchReportSchedules() {
+  return listReportSchedules();
 }
 
 export async function fetchObjectives() {
-  return safeFetch((sb) => sb.from("objectives").select("*"), demo.demoObjectives);
+  return withDemoFallback(demo.demoObjectives, async (db) => {
+    const { data, error } = await db.from("objectives").select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  });
 }
 
 export async function fetchKeyResults() {
-  return safeFetch((sb) => sb.from("key_results").select("*"), demo.demoKeyResults);
+  return withDemoFallback(demo.demoKeyResults, async (db) => {
+    const { data, error } = await db.from("key_results").select("*");
+    if (error) throw error;
+    return data ?? [];
+  });
 }
 
 export async function fetchRequisitions() {
-  return safeFetch((sb) => sb.from("job_requisitions").select("*"), demo.demoRequisitions);
+  return listRequisitions();
 }
 
 export async function fetchSops() {
-  return safeFetch((sb) => sb.from("sop_documents").select("*"), demo.demoSops);
+  return listSops();
 }
 
 export async function fetchAuditLogs() {
-  return safeFetch(
-    (sb) => sb.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
-    demo.demoAuditLogs,
-  );
+  return listAuditLogs();
+}
+
+export async function fetchProfileData() {
+  return getProfileScreenData();
 }
 
 export { demo };

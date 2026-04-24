@@ -76,7 +76,7 @@ begin
     'sop_documents','playbooks','checklists',
     'approvals','approval_steps','alert_rules','alerts','reports','report_schedules',
     'notifications','audit_logs',
-    'integrations','import_jobs','app_settings'
+    'integrations','import_jobs','app_settings','user_preferences','user_sessions'
   ]
   loop
     execute format('alter table public.%I enable row level security;', t);
@@ -192,3 +192,16 @@ drop policy if exists notifications_update on public.notifications;
 create policy notifications_update on public.notifications
 for update using (company_id = current_company_id() and auth_user_id = auth.uid())
 with check (company_id = current_company_id() and auth_user_id = auth.uid());
+
+drop policy if exists user_preferences_select on public.user_preferences;
+create policy user_preferences_select on public.user_preferences
+for select using (company_id = current_company_id() and auth_user_id = auth.uid());
+
+drop policy if exists user_preferences_write on public.user_preferences;
+create policy user_preferences_write on public.user_preferences
+for all using (company_id = current_company_id() and auth_user_id = auth.uid())
+with check (company_id = current_company_id() and auth_user_id = auth.uid());
+
+drop policy if exists user_sessions_select on public.user_sessions;
+create policy user_sessions_select on public.user_sessions
+for select using (company_id = current_company_id() and auth_user_id = auth.uid());
