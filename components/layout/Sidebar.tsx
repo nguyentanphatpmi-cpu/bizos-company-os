@@ -92,34 +92,34 @@ export function Sidebar({
   };
 
   return (
-    <aside className="hidden md:flex md:w-[220px] md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:bg-white md:ring-1 md:ring-[var(--line-soft)]">
+    <aside className="hidden md:flex md:w-[240px] md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:bg-white md:ring-1 md:ring-[var(--line-soft)]">
       <div className="flex h-[78px] items-center gap-3 px-5 border-b border-[var(--line-soft)]">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6D5EF7] to-[#415BFF] text-white font-bold text-base shadow-[0_10px_25px_rgba(88,72,246,0.22)]">
           B
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-[15px] font-bold text-[var(--text-strong)]">BIZOS</span>
-          <span className="text-[10px] text-[var(--text-soft)] mt-0.5">{t("brand.tagline")}</span>
+          <span className="text-[16px] font-bold text-[var(--text-strong)]">BIZOS</span>
+          <span className="text-[11px] text-[var(--text-soft)] mt-0.5">{t("brand.tagline")}</span>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2">
         {visibleGroups.map((group) => {
           const open = openGroups.has(group.id);
           const panelId = `sidebar-group-${group.id}`;
           return (
-            <div key={group.id} className="pt-1.5 first:pt-0">
+            <div key={group.id} className="pt-2 first:pt-0">
               <button
                 type="button"
                 onClick={() => toggle(group.id)}
                 aria-expanded={open}
                 aria-controls={panelId}
                 aria-label={t("sidebar.group.toggle")}
-                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-soft)] hover:text-[var(--text-strong)] transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-soft)] hover:text-[var(--text-strong)] transition-colors"
               >
                 <span className="truncate">{t(group.labelKey)}</span>
                 <ChevronDown
-                  className={cn("h-3.5 w-3.5 shrink-0 transition-transform", open ? "" : "-rotate-90")}
+                  className={cn("h-4 w-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
                 />
               </button>
               {open && (
@@ -149,14 +149,14 @@ function renderItem(item: NavItem, pathname: string, t: (k: Parameters<typeof ra
       key={item.href}
       href={item.href}
       className={cn(
-        "flex items-center gap-3 rounded-2xl px-3.5 py-3 text-[13px] transition-colors",
+        "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] transition-colors",
         active
           ? "bg-[var(--brand-50)] text-[var(--brand-700)] font-semibold shadow-[inset_0_0_0_1px_var(--brand-100)]"
           : "text-[var(--text-soft)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-strong)]",
       )}
     >
-      <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl", active ? "bg-white" : "bg-[var(--surface-alt)]")}>
-        <Icon className="h-4 w-4 shrink-0" />
+      <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0", active ? "bg-white" : "bg-[var(--surface-alt)]")}>
+        <Icon className="h-[18px] w-[18px] shrink-0" />
       </span>
       <span className="truncate">{t(item.labelKey)}</span>
     </Link>

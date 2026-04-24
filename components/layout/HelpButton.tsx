@@ -38,10 +38,11 @@ export function HelpButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("help.button")}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-alt)] text-[var(--text-soft)] hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+        className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--surface-alt)] px-3.5 text-[13px] font-medium text-[var(--text-soft)] hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
         title={t("help.button")}
       >
-        <HelpCircle className="h-4 w-4" />
+        <HelpCircle className="h-[18px] w-[18px]" />
+        <span className="hidden sm:inline">{t("help.button")}</span>
       </button>
 
       <Sheet
