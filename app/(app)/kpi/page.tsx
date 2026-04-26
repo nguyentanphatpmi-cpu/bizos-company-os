@@ -15,18 +15,27 @@ import { DataTable, type Column } from "@/components/tables/DataTable";
 import { fetchKpis, fetchKpiTargets, fetchKpiActuals, fetchTasks, fetchEmployees } from "@/lib/queries";
 import { createKpiAction, recordKpiActualAction } from "@/app/(app)/workspace/actions";
 import { buildKpiRows } from "@/lib/kpi/cascade";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { deptScopeFilter } from "@/lib/auth/permissions";
 import { Target } from "lucide-react";
 
 export default async function KpiPage() {
   const { t } = await tServer();
-  const [kpis, targets, actuals, tasks, employees] = await Promise.all([
+  const [kpis, targets, actuals, tasks, employees, user] = await Promise.all([
     fetchKpis(),
     fetchKpiTargets(),
     fetchKpiActuals(),
     fetchTasks(),
     fetchEmployees(),
+    getAuthenticatedUser(),
   ]);
+  const ctx = await getUserContext(user);
+  const deptScope = deptScopeFilter(ctx);
   const rows = buildKpiRows(kpis, targets, actuals);
+  // Scoped users see only their dept KPIs in the table; company KPIs remain visible to all
+  const tableRows = deptScope
+    ? rows.filter((r) => r.level === "company" || (r.owner_department_id && deptScope.includes(r.owner_department_id)))
+    : rows;
 
   const companyRows = rows.filter((r) => r.level === "company");
   const deptRows = rows.filter((r) => r.level === "department");
@@ -55,7 +64,7 @@ export default async function KpiPage() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const columns: Column<(typeof rows)[number]>[] = [
+  const columns: Column<(typeof tableRows)[number]>[] = [
     {
       key: "name",
       header: "KPI",
@@ -361,7 +370,7 @@ export default async function KpiPage() {
           <CardTitle className="text-sm">Danh sách toàn bộ KPI</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} rows={rows} />
+          <DataTable columns={columns} rows={tableRows} />
         </CardContent>
       </Card>
     </div>

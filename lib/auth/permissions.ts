@@ -36,3 +36,29 @@ export function canAccessDepartment(context: UserContext, departmentId: string |
   if (hasAnyRole(context, ["ceo", "cfo", "hr_admin", "auditor"])) return true;
   return context.scopedDepartmentIds.includes(departmentId);
 }
+
+// True when the user is a dept_head without any overriding senior role.
+// Senior roles (ceo/cfo/hr_admin/auditor) always see all data.
+export function isScopedDeptHead(context: UserContext) {
+  return hasRole(context, "dept_head") && !hasAnyRole(context, ["ceo", "cfo", "hr_admin", "auditor"]);
+}
+
+// True when the user is a team_lead without dept_head or senior roles.
+export function isScopedTeamLead(context: UserContext) {
+  return (
+    hasRole(context, "team_lead") &&
+    !hasAnyRole(context, ["ceo", "cfo", "hr_admin", "auditor", "dept_head"])
+  );
+}
+
+// Returns the dept IDs the user is scoped to, or null if they can see everything.
+export function deptScopeFilter(context: UserContext): readonly string[] | null {
+  if (isScopedDeptHead(context)) return context.scopedDepartmentIds;
+  return null;
+}
+
+// Returns the team IDs the user is scoped to, or null if they can see everything.
+export function teamScopeFilter(context: UserContext): readonly string[] | null {
+  if (isScopedTeamLead(context)) return context.scopedTeamIds;
+  return null;
+}

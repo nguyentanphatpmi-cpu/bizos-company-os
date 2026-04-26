@@ -11,19 +11,24 @@ import { fetchDepartments, fetchEmployees, fetchKpis, fetchKpiActuals, fetchKpiT
 import { createDepartmentAction } from "@/app/(app)/workspace/actions";
 import { buildKpiRows } from "@/lib/kpi/cascade";
 import { formatCompactVND } from "@/lib/utils";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { deptScopeFilter } from "@/lib/auth/permissions";
 import type { Department } from "@/types/domain";
-
-export const revalidate = 300;
 
 export default async function DepartmentsPage() {
   const { t } = await tServer();
-  const [departments, employees, kpis, targets, actuals] = await Promise.all([
+  const [departments, employees, kpis, targets, actuals, user] = await Promise.all([
     fetchDepartments(),
     fetchEmployees(),
     fetchKpis(),
     fetchKpiTargets(),
     fetchKpiActuals(),
+    getAuthenticatedUser(),
   ]);
+  const ctx = await getUserContext(user);
+  const deptScope = deptScopeFilter(ctx);
+  const visibleDepts = deptScope ? departments.filter((d) => deptScope.includes(d.id)) : departments;
+  const visibleEmployees = deptScope ? employees.filter((e) => e.department_id && deptScope.includes(e.department_id)) : employees;
 
   const rows = buildKpiRows(kpis, targets, actuals);
 
@@ -34,9 +39,9 @@ export default async function DepartmentsPage() {
     kpi_completion: number | null;
   };
 
-  const tableRows: Row[] = departments.map((d) => {
-    const head = employees.find((e) => e.id === d.head_employee_id);
-    const headcount = employees.filter((e) => e.department_id === d.id).length;
+  const tableRows: Row[] = visibleDepts.map((d) => {
+    const head = visibleEmployees.find((e) => e.id === d.head_employee_id);
+    const headcount = visibleEmployees.filter((e) => e.department_id === d.id).length;
     const deptKpi = rows.find((r) => r.level === "department" && r.owner_department_id === d.id);
     return {
       ...d,
@@ -84,7 +89,7 @@ export default async function DepartmentsPage() {
     },
   ];
 
-  const totalBudget = departments.reduce((s, d) => s + d.budget_monthly, 0);
+  const totalBudget = visibleDepts.reduce((s, d) => s + d.budget_monthly, 0);
 
   return (
     <div>
@@ -98,7 +103,7 @@ export default async function DepartmentsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card className="p-4">
           <div className="text-xs text-zinc-500">Phòng ban</div>
-          <div className="text-2xl font-bold">{departments.length}</div>
+          <div className="text-2xl font-bold">{visibleDepts.length}</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs text-zinc-500">Tổng budget/tháng</div>
@@ -106,7 +111,7 @@ export default async function DepartmentsPage() {
         </Card>
         <Card className="p-4">
           <div className="text-xs text-zinc-500">Nhân sự</div>
-          <div className="text-2xl font-bold">{employees.length}</div>
+          <div className="text-2xl font-bold">{visibleEmployees.length}</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs text-zinc-500">KPI đỏ</div>
@@ -134,7 +139,7 @@ export default async function DepartmentsPage() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle>Danh sách phòng ban</CardTitle>
-          <Badge variant="outline">{departments.length}</Badge>
+          <Badge variant="outline">{visibleDepts.length}</Badge>
         </CardHeader>
         <CardContent>
           <DataTable columns={columns} rows={tableRows} />

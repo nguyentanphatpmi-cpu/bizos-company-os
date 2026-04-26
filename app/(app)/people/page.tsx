@@ -11,22 +11,36 @@ import { ProgressList } from "@/components/widgets/ProgressList";
 import { fetchEmployees, fetchDepartments, fetchKpis } from "@/lib/queries";
 import { createEmployeeAction } from "@/app/(app)/workspace/actions";
 import { formatCompactVND } from "@/lib/utils";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { deptScopeFilter, teamScopeFilter } from "@/lib/auth/permissions";
 import { Users, UserPlus, Briefcase, TrendingUp } from "lucide-react";
 import type { Employee } from "@/types/domain";
 
 export default async function PeoplePage() {
   const { t } = await tServer();
-  const [employees, departments, kpis] = await Promise.all([
+  const [employees, departments, kpis, user] = await Promise.all([
     fetchEmployees(),
     fetchDepartments(),
     fetchKpis(),
+    getAuthenticatedUser(),
   ]);
+  const ctx = await getUserContext(user);
+  const deptScope = deptScopeFilter(ctx);
+  const teamScope = teamScopeFilter(ctx);
+  const visibleEmployees = deptScope
+    ? employees.filter((e) => e.department_id && deptScope.includes(e.department_id))
+    : teamScope
+      ? employees.filter((e) => e.team_id && teamScope.includes(e.team_id))
+      : employees;
+  const visibleDepts = deptScope
+    ? departments.filter((d) => deptScope.includes(d.id))
+    : departments;
 
   type Row = Employee & { dept_name: string; manager_name: string; kpi_count: number };
-  const rows: Row[] = employees.map((e) => ({
+  const rows: Row[] = visibleEmployees.map((e) => ({
     ...e,
-    dept_name: departments.find((d) => d.id === e.department_id)?.name ?? "—",
-    manager_name: employees.find((m) => m.id === e.manager_id)?.full_name ?? "—",
+    dept_name: visibleDepts.find((d) => d.id === e.department_id)?.name ?? "—",
+    manager_name: visibleEmployees.find((m) => m.id === e.manager_id)?.full_name ?? "—",
     kpi_count: kpis.filter((k) => k.owner_employee_id === e.id).length,
   }));
 
@@ -65,13 +79,13 @@ export default async function PeoplePage() {
     },
   ];
 
-  const active = employees.filter((e) => e.status === "active").length;
-  const totalPayroll = employees.reduce((s, e) => s + e.base_salary, 0);
-  const deptCounts = departments.map((d) => ({
+  const active = visibleEmployees.filter((e) => e.status === "active").length;
+  const totalPayroll = visibleEmployees.reduce((s, e) => s + e.base_salary, 0);
+  const deptCounts = visibleDepts.map((d) => ({
     label: d.name,
-    value: employees.filter((e) => e.department_id === d.id).length,
-    max: employees.length,
-    right: `${employees.filter((e) => e.department_id === d.id).length} người`,
+    value: visibleEmployees.filter((e) => e.department_id === d.id).length,
+    max: visibleEmployees.length,
+    right: `${visibleEmployees.filter((e) => e.department_id === d.id).length} người`,
     color: "#6366f1",
   }));
 
@@ -87,7 +101,7 @@ export default async function PeoplePage() {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
         <KpiCard
           label="Tổng nhân sự"
-          value={String(employees.length)}
+          value={String(visibleEmployees.length)}
           accent="indigo"
           icon={<Users className="h-3.5 w-3.5" />}
           spark={[10, 11, 12, 12, 13, employees.length]}
@@ -101,7 +115,7 @@ export default async function PeoplePage() {
         />
         <KpiCard
           label="Phòng ban"
-          value={String(departments.length)}
+          value={String(visibleDepts.length)}
           accent="violet"
           icon={<Briefcase className="h-3.5 w-3.5" />}
         />
@@ -109,7 +123,7 @@ export default async function PeoplePage() {
           label="Quỹ lương"
           value={formatCompactVND(totalPayroll)}
           accent="amber"
-          spark={[380, 400, 420, 440, 450, Math.round(totalPayroll / 1_000_000)].map((x) => x * 1_000_000)}
+          spark={[380, 400, 420, 440, 450, Math.round(totalPayroll / 1_000_000) || 450].map((x) => x * 1_000_000)}
         />
         <KpiCard
           label="Mới tháng 4"
@@ -130,13 +144,13 @@ export default async function PeoplePage() {
             <Input name="email" type="email" placeholder="Email công việc" required />
             <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
               <option value="">Chọn phòng ban</option>
-              {departments.map((department) => (
+              {visibleDepts.map((department) => (
                 <option key={department.id} value={department.id}>{department.name}</option>
               ))}
             </select>
             <select name="managerId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
               <option value="">Chọn manager</option>
-              {employees.map((employee) => (
+              {visibleEmployees.map((employee) => (
                 <option key={employee.id} value={employee.id}>{employee.full_name}</option>
               ))}
             </select>
@@ -180,7 +194,7 @@ export default async function PeoplePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {employees.slice(0, 5).map((e, i) => (
+            {visibleEmployees.slice(0, 5).map((e, i) => (
               <Link
                 key={e.id}
                 href={`/people/${e.id}`}
@@ -192,7 +206,7 @@ export default async function PeoplePage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm text-zinc-900 truncate">{e.full_name}</div>
                   <div className="text-xs text-zinc-500 truncate">
-                    {departments.find((d) => d.id === e.department_id)?.name ?? "—"}
+                    {visibleDepts.find((d) => d.id === e.department_id)?.name ?? "—"}
                   </div>
                 </div>
                 <Badge variant={i === 0 ? "success" : "outline"}>

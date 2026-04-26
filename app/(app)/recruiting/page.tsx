@@ -11,24 +11,33 @@ import { ProgressList } from "@/components/widgets/ProgressList";
 import { StatChip } from "@/components/widgets/StatChip";
 import { fetchRequisitions, fetchDepartments } from "@/lib/queries";
 import { createRequisitionAction } from "@/app/(app)/workspace/actions";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { deptScopeFilter } from "@/lib/auth/permissions";
 import type { JobRequisition } from "@/types/domain";
 import { UserPlus, Users, Clock, Award } from "lucide-react";
 
 export default async function RecruitingPage() {
   const { t } = await tServer();
-  const [requisitions, departments] = await Promise.all([
+  const [requisitions, departments, user] = await Promise.all([
     fetchRequisitions(),
     fetchDepartments(),
+    getAuthenticatedUser(),
   ]);
+  const ctx = await getUserContext(user);
+  const deptScope = deptScopeFilter(ctx);
+  const visibleRequisitions = deptScope
+    ? requisitions.filter((r) => r.department_id && deptScope.includes(r.department_id))
+    : requisitions;
+  const visibleDepts = deptScope ? departments.filter((d) => deptScope.includes(d.id)) : departments;
 
   type Row = JobRequisition & { dept_name: string };
-  const rows: Row[] = requisitions.map((r) => ({
+  const rows: Row[] = visibleRequisitions.map((r) => ({
     ...r,
-    dept_name: departments.find((d) => d.id === r.department_id)?.name ?? "—",
+    dept_name: visibleDepts.find((d) => d.id === r.department_id)?.name ?? "—",
   }));
 
-  const open = requisitions.filter((r) => r.status === "open").length;
-  const totalHeadcount = requisitions.reduce((s, r) => s + r.headcount, 0);
+  const open = visibleRequisitions.filter((r) => r.status === "open").length;
+  const totalHeadcount = visibleRequisitions.reduce((s, r) => s + r.headcount, 0);
 
   const pipelineStages = [
     { name: "Mới", value: 32, color: "#6366f1" },
@@ -89,7 +98,7 @@ export default async function RecruitingPage() {
             <Input name="title" placeholder="Vị trí tuyển" required />
             <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
               <option value="">Phòng ban</option>
-              {departments.map((department) => (
+              {visibleDepts.map((department) => (
                 <option key={department.id} value={department.id}>{department.name}</option>
               ))}
             </select>

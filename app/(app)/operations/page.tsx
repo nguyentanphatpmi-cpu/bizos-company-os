@@ -11,6 +11,8 @@ import { ActivityFeed } from "@/components/widgets/ActivityFeed";
 import { ProgressList } from "@/components/widgets/ProgressList";
 import { fetchTasks, fetchEmployees, fetchKpis } from "@/lib/queries";
 import { createTaskAction, recordTaskOutputAction } from "@/app/(app)/workspace/actions";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { deptScopeFilter, teamScopeFilter } from "@/lib/auth/permissions";
 import type { Task } from "@/types/domain";
 import { CheckCircle2, AlertTriangle, Target, ListChecks, Zap, Wrench } from "lucide-react";
 
@@ -24,28 +26,41 @@ const COLUMNS: Array<{ key: Task["status"]; label: string; tone: string }> = [
 
 export default async function OperationsPage() {
   const { t } = await tServer();
-  const [tasks, employees, kpis] = await Promise.all([fetchTasks(), fetchEmployees(), fetchKpis()]);
+  const [tasks, employees, kpis, user] = await Promise.all([fetchTasks(), fetchEmployees(), fetchKpis(), getAuthenticatedUser()]);
+  const ctx = await getUserContext(user);
+  const deptScope = deptScopeFilter(ctx);
+  const teamScope = teamScopeFilter(ctx);
+  const scopedEmployeeIds = deptScope
+    ? new Set(employees.filter((e) => e.department_id && deptScope.includes(e.department_id)).map((e) => e.id))
+    : teamScope
+      ? new Set(employees.filter((e) => e.team_id && teamScope.includes(e.team_id)).map((e) => e.id))
+      : null;
+  const tasks_v = deptScope
+    ? tasks.filter((t) => t.department_id && deptScope.includes(t.department_id))
+    : scopedEmployeeIds
+      ? tasks.filter((t) => t.assignee_id && scopedEmployeeIds.has(t.assignee_id))
+      : tasks;
 
-  const done = tasks.filter((t) => t.status === "done").length;
-  const open = tasks.filter((t) => t.status !== "done" && t.status !== "cancelled");
+  const done = tasks_v.filter((t) => t.status === "done").length;
+  const open = tasks_v.filter((t) => t.status !== "done" && t.status !== "cancelled");
   const overdue = open.filter((t) => t.due_date && new Date(t.due_date) < new Date("2026-04-23"));
-  const urgent = tasks.filter((t) => t.priority === "urgent" || t.priority === "high").length;
-  const withKpi = tasks.filter((t) => t.linked_kpi_id).length;
-  const kpiLinkPct = tasks.length ? Math.round((withKpi / tasks.length) * 100) : 0;
-  const onTime = tasks.length ? Math.round(((tasks.length - overdue.length) / tasks.length) * 100) : 0;
+  const urgent = tasks_v.filter((t) => t.priority === "urgent" || t.priority === "high").length;
+  const withKpi = tasks_v.filter((t) => t.linked_kpi_id).length;
+  const kpiLinkPct = tasks_v.length ? Math.round((withKpi / tasks_v.length) * 100) : 0;
+  const onTime = tasks_v.length ? Math.round(((tasks_v.length - overdue.length) / tasks_v.length) * 100) : 0;
 
   const statusSegments = [
-    { name: "To do", value: tasks.filter((t) => t.status === "todo").length, color: "#a1a1aa" },
-    { name: "Đang làm", value: tasks.filter((t) => t.status === "in_progress").length, color: "#6366f1" },
-    { name: "Review", value: tasks.filter((t) => t.status === "review").length, color: "#8b5cf6" },
-    { name: "Blocked", value: tasks.filter((t) => t.status === "blocked").length, color: "#ef4444" },
+    { name: "To do", value: tasks_v.filter((t) => t.status === "todo").length, color: "#a1a1aa" },
+    { name: "Đang làm", value: tasks_v.filter((t) => t.status === "in_progress").length, color: "#6366f1" },
+    { name: "Review", value: tasks_v.filter((t) => t.status === "review").length, color: "#8b5cf6" },
+    { name: "Blocked", value: tasks_v.filter((t) => t.status === "blocked").length, color: "#ef4444" },
     { name: "Done", value: done, color: "#10b981" },
   ];
   const totalForDonut = statusSegments.reduce((s, x) => s + x.value, 0) || 1;
 
   // Workload by assignee
   const byAssignee: Record<string, number> = {};
-  tasks.forEach((t) => {
+  tasks_v.forEach((t) => {
     if (t.assignee_id) byAssignee[t.assignee_id] = (byAssignee[t.assignee_id] || 0) + 1;
   });
   const workloadRows = Object.entries(byAssignee)
@@ -60,7 +75,7 @@ export default async function OperationsPage() {
   // Calendar highlights: days having task due
   const highlightDays = Array.from(
     new Set(
-      tasks
+      tasks_v
         .map((t) => (t.due_date ? Number(t.due_date.slice(8, 10)) : null))
         .filter((d): d is number => !!d),
     ),
@@ -76,7 +91,7 @@ export default async function OperationsPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-        <KpiCard label="Tổng task" value={String(tasks.length)} accent="indigo" icon={<ListChecks className="h-3.5 w-3.5" />} spark={[8, 10, 9, 11, 12, tasks.length]} />
+        <KpiCard label="Tổng task" value={String(tasks_v.length)} accent="indigo" icon={<ListChecks className="h-3.5 w-3.5" />} spark={[8, 10, 9, 11, 12, tasks_v.length]} />
         <KpiCard label="Hoàn thành" value={String(done)} accent="emerald" icon={<CheckCircle2 className="h-3.5 w-3.5" />} spark={[2, 3, 4, 5, 6, done]} delta={22} />
         <KpiCard label="Đang làm" value={String(open.length)} accent="violet" icon={<Zap className="h-3.5 w-3.5" />} spark={[3, 4, 5, 6, 7, open.length]} />
         <KpiCard label="Overdue" value={String(overdue.length)} accent="red" icon={<AlertTriangle className="h-3.5 w-3.5" />} />
@@ -141,7 +156,7 @@ export default async function OperationsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {COLUMNS.map((col) => {
-                const colTasks = tasks.filter((t) => t.status === col.key);
+                const colTasks = tasks_v.filter((t) => t.status === col.key);
                 return (
                   <div
                     key={col.key}
@@ -293,13 +308,13 @@ export default async function OperationsPage() {
             <div>
               <div className="text-xs text-zinc-500">Task không gắn KPI</div>
               <div className="text-2xl font-bold text-zinc-900">
-                {tasks.filter((t) => !t.linked_kpi_id).length}
+                {tasks_v.filter((t) => !t.linked_kpi_id).length}
               </div>
             </div>
             <div>
               <div className="text-xs text-zinc-500">Admin / Maintenance</div>
               <div className="text-2xl font-bold text-zinc-900">
-                {tasks.filter((t) => t.task_type === "admin" || t.task_type === "maintenance").length}
+                {tasks_v.filter((t) => t.task_type === "admin" || t.task_type === "maintenance").length}
               </div>
             </div>
             <div className="text-xs text-zinc-500">
