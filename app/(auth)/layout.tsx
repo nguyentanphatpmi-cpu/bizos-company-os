@@ -35,31 +35,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           </ul>
         </div>
 
-        <div className="text-xs text-white/60 space-y-1">
-          <div>
-            by{" "}
-            <a href="mailto:alexle@titanlabs.vn" className="underline hover:text-white">
-              Alex Le
-            </a>{" "}
-            · alexle@titanlabs.vn
-          </div>
-          <div>
-            {vn ? "Ủng hộ PayPal" : "Donate PayPal"}:{" "}
-            <a
-              href="https://www.paypal.com/paypalme/sai211dn"
-              target="_blank"
-              rel="noreferrer"
-              className="underline hover:text-white"
-            >
-              sai211dn@gmail.com
-            </a>
-          </div>
-          <div>
-            {vn
-              ? "Cần deploy / tuỳ biến cho công ty? Liên hệ alexle@titanlabs.vn"
-              : "Need a custom deployment? Contact alexle@titanlabs.vn"}
-          </div>
-        </div>
+
       </div>
 
       <div className="flex items-center justify-center p-6 lg:p-12 relative">
