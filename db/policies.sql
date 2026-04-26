@@ -8,7 +8,8 @@
 -- role; if a user belongs to multiple companies they should authenticate per
 -- company context (future work).
 create or replace function current_company_id() returns uuid
-language sql stable as $$
+language sql stable security definer
+set search_path = public as $$
   select company_id from public.user_roles
   where auth_user_id = auth.uid()
   order by created_at asc
@@ -16,7 +17,8 @@ language sql stable as $$
 $$;
 
 create or replace function has_role(target app_role) returns boolean
-language sql stable as $$
+language sql stable security definer
+set search_path = public as $$
   select exists (
     select 1 from public.user_roles
     where auth_user_id = auth.uid()
@@ -26,7 +28,8 @@ language sql stable as $$
 $$;
 
 create or replace function has_any_role(variadic roles app_role[]) returns boolean
-language sql stable as $$
+language sql stable security definer
+set search_path = public as $$
   select exists (
     select 1 from public.user_roles
     where auth_user_id = auth.uid()
@@ -36,7 +39,8 @@ language sql stable as $$
 $$;
 
 create or replace function current_employee_id() returns uuid
-language sql stable as $$
+language sql stable security definer
+set search_path = public as $$
   select id from public.employees
   where auth_user_id = auth.uid()
     and company_id = current_company_id()
@@ -44,7 +48,8 @@ language sql stable as $$
 $$;
 
 create or replace function is_dept_head_of(dept uuid) returns boolean
-language sql stable as $$
+language sql stable security definer
+set search_path = public as $$
   select exists (
     select 1 from public.user_roles
     where auth_user_id = auth.uid()
@@ -58,7 +63,10 @@ $$;
 -- Enable RLS + generic company_id policies
 -- =============================================================================
 do $$
-declare t text;
+declare 
+  t text;
+  has_company_id boolean;
+  table_exists boolean;
 begin
   foreach t in array array[
     'companies','business_units','departments','teams','positions',
@@ -79,11 +87,31 @@ begin
     'integrations','import_jobs','app_settings','user_preferences','user_sessions'
   ]
   loop
-    execute format('alter table public.%I enable row level security;', t);
-    execute format('drop policy if exists tenant_select on public.%I;', t);
-    execute format(
-      'create policy tenant_select on public.%I for select using (company_id = current_company_id());', t
-    );
+    -- 1. Check if table exists
+    select exists (
+      select 1 from information_schema.tables 
+      where table_schema = 'public' and table_name = t
+    ) into table_exists;
+
+    if table_exists then
+      execute format('alter table public.%I enable row level security;', t);
+      
+      -- 2. Create generic tenant policy based on table structure
+      if t = 'companies' then
+        execute format('drop policy if exists tenant_select on public.%I;', t);
+        execute format('create policy tenant_select on public.%I for select using (id = current_company_id());', t);
+      else
+        select exists (
+          select 1 from information_schema.columns 
+          where table_schema = 'public' and table_name = t and column_name = 'company_id'
+        ) into has_company_id;
+
+        if has_company_id then
+          execute format('drop policy if exists tenant_select on public.%I;', t);
+          execute format('create policy tenant_select on public.%I for select using (company_id = current_company_id());', t);
+        end if;
+      end if;
+    end if;
   end loop;
 end $$;
 

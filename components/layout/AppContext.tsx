@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/i18n/dict";
 
 export type AppCtx = {
   locale: Locale;
-  roles: string[];
+  roles: readonly string[];
 };
 
 const Ctx = createContext<AppCtx>({ locale: "vi", roles: [] });

@@ -22,8 +22,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { DICT } from "./i18n/dict";
+import type { AppRole } from "./auth/permissions";
 
-export type AppRole = "ceo" | "cfo" | "hr_admin" | "dept_head" | "team_lead" | "employee" | "auditor";
+export type { AppRole };
 
 export type NavItem = {
   href: string;

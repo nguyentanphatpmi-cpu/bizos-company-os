@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "bizos.sidebar.groups";
 
-function filterGroups(groups: NavGroup[], roles: string[]): NavGroup[] {
+function filterGroups(groups: NavGroup[], roles: readonly string[]): NavGroup[] {
   return groups
     .map((g) => ({
       ...g,
@@ -48,7 +48,7 @@ export function Sidebar({
   roles = [],
 }: {
   locale?: Locale;
-  roles?: string[];
+  roles?: readonly string[];
 }) {
   const pathname = usePathname();
   const t = (key: Parameters<typeof rawT>[1]) => rawT(locale, key);

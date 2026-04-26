@@ -6,9 +6,9 @@ export type UserContext = {
   authUserId: string | null;
   companyId: string | null;
   employeeId: string | null;
-  roles: AppRole[];
-  scopedDepartmentIds: string[];
-  scopedTeamIds: string[];
+  roles: readonly AppRole[];
+  scopedDepartmentIds: readonly string[];
+  scopedTeamIds: readonly string[];
 };
 
 export function hasRole(context: UserContext, role: AppRole) {

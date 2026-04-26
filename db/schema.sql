@@ -128,10 +128,15 @@ create table if not exists employees (
   updated_at timestamptz not null default now()
 );
 
-alter table departments add constraint departments_head_fk
-  foreign key (head_employee_id) references employees(id) on delete set null deferrable initially deferred;
-alter table teams add constraint teams_lead_fk
-  foreign key (lead_employee_id) references employees(id) on delete set null deferrable initially deferred;
+do $$ begin
+  alter table departments add constraint departments_head_fk
+    foreign key (head_employee_id) references employees(id) on delete set null deferrable initially deferred;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter table teams add constraint teams_lead_fk
+    foreign key (lead_employee_id) references employees(id) on delete set null deferrable initially deferred;
+exception when duplicate_object then null; end $$;
 
 create table if not exists employee_reporting_lines (
   id uuid primary key default gen_random_uuid(),
@@ -426,8 +431,10 @@ create table if not exists projects (
   created_at timestamptz not null default now()
 );
 
-alter table tasks add constraint tasks_project_fk
-  foreign key (project_id) references projects(id) on delete set null;
+do $$ begin
+  alter table tasks add constraint tasks_project_fk
+    foreign key (project_id) references projects(id) on delete set null;
+exception when duplicate_object then null; end $$;
 
 create table if not exists project_members (
   id uuid primary key default gen_random_uuid(),
@@ -828,7 +835,7 @@ do $$
 declare r record;
 begin
   for r in select unnest(array[
-    'companies','departments','employees','kpis','kpi_formulas','kpi_actuals',
+    'companies','employees','kpis','kpi_formulas','kpi_actuals',
     'tasks','sop_documents','app_settings','user_preferences'
   ]) as tbl
   loop
