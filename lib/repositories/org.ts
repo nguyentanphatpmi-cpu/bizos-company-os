@@ -80,7 +80,7 @@ export async function createEmployee(input: {
   const db = await getDbClientOrThrow();
   const employeesTable = db.from("employees") as unknown as {
     insert: (values: Record<string, unknown>) => {
-      select: (columns: string) => { single: () => Promise<{ data: { id: string } | null }> };
+      select: (columns: string) => { single: () => Promise<{ data: { id: string } | null; error: any }> };
     };
   };
 
@@ -104,15 +104,18 @@ export async function createEmployee(input: {
     if (authData.user) {
       authUserId = authData.user.id;
 
-      // Automatically assign the default 'employee' role
-      const userRolesTable = db.from("user_roles") as unknown as {
-        insert: (values: Record<string, unknown>) => Promise<unknown>;
-      };
-      await userRolesTable.insert({
+      // Automatically assign the default 'employee' role using admin client to bypass RLS
+      const userRolesTable = supabaseAdmin.from("user_roles");
+      const { error: roleError } = await userRolesTable.insert({
         auth_user_id: authUserId,
         company_id: context.companyId,
         role: "employee",
       });
+
+      if (roleError) {
+        console.error("Lỗi gán quyền user_roles:", roleError);
+        throw new Error(`Không thể gán quyền cho tài khoản: ${roleError.message}`);
+      }
     }
   }
 
@@ -128,7 +131,12 @@ export async function createEmployee(input: {
     status: "active",
   };
 
-  const { data } = await employeesTable.insert(payload).select("id").single();
+  const { data, error } = await employeesTable.insert(payload).select("id").single();
+  if (error) {
+    console.error("Lỗi tạo nhân sự:", error);
+    throw new Error(`Không thể tạo hồ sơ nhân sự: ${error.message}`);
+  }
+
   await writeAuditLog({
     action: "employee.create",
     entity: "employees",
