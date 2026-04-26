@@ -62,12 +62,12 @@ export default async function LoginPage({
         </Button>
       </form>
 
-      <div className="text-center text-sm text-zinc-500">
+      {/* <div className="text-center text-sm text-zinc-500">
         {t("auth.noAccount")}{" "}
         <Link href="/signup" className="text-indigo-600 font-medium hover:underline">
           {t("common.signup")}
         </Link>
-      </div>
+      </div> */}
     </div>
   );
 }
