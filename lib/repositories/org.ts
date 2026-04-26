@@ -1,6 +1,8 @@
 import * as demo from "@/lib/queries/demo";
 import { writeAuditLog } from "@/lib/repositories/audit";
 import { getAuthenticatedUser, getDbClientOrThrow, getUserContext, withDemoFallback } from "@/lib/repositories/shared";
+import { createServiceRoleClient } from "@/lib/supabase/server";
+import { isDemoMode } from "@/lib/env";
 
 export async function listDepartments() {
   return withDemoFallback(demo.demoDepartments, async (db) => {
@@ -82,8 +84,41 @@ export async function createEmployee(input: {
     };
   };
 
+  let authUserId = null;
+
+  if (input.email && !isDemoMode()) {
+    const supabaseAdmin = await createServiceRoleClient();
+    const defaultPassword = "Abcd@1234";
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: input.email,
+      password: defaultPassword,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      console.error("Lỗi tạo user Supabase:", authError);
+      throw new Error(`Không thể tạo tài khoản đăng nhập: ${authError.message}`);
+    }
+
+    if (authData.user) {
+      authUserId = authData.user.id;
+
+      // Automatically assign the default 'employee' role
+      const userRolesTable = db.from("user_roles") as unknown as {
+        insert: (values: Record<string, unknown>) => Promise<unknown>;
+      };
+      await userRolesTable.insert({
+        auth_user_id: authUserId,
+        company_id: context.companyId,
+        role: "employee",
+      });
+    }
+  }
+
   const payload = {
     company_id: context.companyId,
+    auth_user_id: authUserId,
     full_name: input.fullName,
     email: input.email || null,
     department_id: input.departmentId || null,
