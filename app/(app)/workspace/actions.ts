@@ -9,8 +9,10 @@ import { createProject } from "@/lib/repositories/projects";
 import { createRequisition } from "@/lib/repositories/recruiting";
 import { createSop } from "@/lib/repositories/knowledge";
 import { updateCompanySettings } from "@/lib/repositories/org";
+import { assertAnyRole } from "@/lib/auth/guard";
 
 export async function createDepartmentAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin"]);
   await createDepartment({
     name: String(formData.get("name") ?? ""),
     code: String(formData.get("code") ?? ""),
@@ -23,6 +25,7 @@ export async function createDepartmentAction(formData: FormData) {
 }
 
 export async function createEmployeeAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin"]);
   await createEmployee({
     fullName: String(formData.get("fullName") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -36,6 +39,7 @@ export async function createEmployeeAction(formData: FormData) {
 }
 
 export async function createKpiAction(formData: FormData) {
+  await assertAnyRole(["ceo", "cfo", "hr_admin", "dept_head"]);
   await createKpi({
     name: String(formData.get("name") ?? ""),
     code: String(formData.get("code") ?? ""),
@@ -52,6 +56,7 @@ export async function createKpiAction(formData: FormData) {
 }
 
 export async function recordKpiActualAction(formData: FormData) {
+  await assertAnyRole(["ceo", "cfo", "hr_admin", "dept_head"]);
   await recordKpiActual({
     kpiId: String(formData.get("kpiId") ?? ""),
     period: String(formData.get("period") ?? "2026-04"),
@@ -61,6 +66,7 @@ export async function recordKpiActualAction(formData: FormData) {
 }
 
 export async function createTaskAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin", "dept_head", "team_lead"]);
   await createTask({
     title: String(formData.get("title") ?? ""),
     assigneeId: String(formData.get("assigneeId") ?? ""),
@@ -74,6 +80,8 @@ export async function createTaskAction(formData: FormData) {
 }
 
 export async function recordTaskOutputAction(formData: FormData) {
+  // All roles can record output on their own tasks — RLS enforces assignee check at DB level
+  await assertAnyRole(["ceo", "cfo", "hr_admin", "dept_head", "team_lead", "employee", "auditor"]);
   await recordTaskOutput({
     taskId: String(formData.get("taskId") ?? ""),
     outputType: String(formData.get("outputType") ?? "deliverable"),
@@ -83,6 +91,7 @@ export async function recordTaskOutputAction(formData: FormData) {
 }
 
 export async function createAccountingEntryAction(formData: FormData) {
+  await assertAnyRole(["ceo", "cfo"]);
   await createAccountingEntry({
     accountCode: String(formData.get("accountCode") ?? ""),
     debit: Number(formData.get("debit") ?? 0),
@@ -96,6 +105,7 @@ export async function createAccountingEntryAction(formData: FormData) {
 }
 
 export async function saveDepartmentBudgetAction(formData: FormData) {
+  await assertAnyRole(["ceo", "cfo", "hr_admin"]);
   await saveDepartmentBudget({
     departmentId: String(formData.get("departmentId") ?? ""),
     budgetMonthly: Number(formData.get("budgetMonthly") ?? 0),
@@ -105,6 +115,7 @@ export async function saveDepartmentBudgetAction(formData: FormData) {
 }
 
 export async function createProjectAction(formData: FormData) {
+  await assertAnyRole(["ceo", "cfo", "hr_admin", "dept_head"]);
   await createProject({
     name: String(formData.get("name") ?? ""),
     code: String(formData.get("code") ?? ""),
@@ -118,6 +129,7 @@ export async function createProjectAction(formData: FormData) {
 }
 
 export async function createRequisitionAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin", "dept_head"]);
   await createRequisition({
     title: String(formData.get("title") ?? ""),
     departmentId: String(formData.get("departmentId") ?? ""),
@@ -128,6 +140,7 @@ export async function createRequisitionAction(formData: FormData) {
 }
 
 export async function createSopAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin", "dept_head"]);
   await createSop({
     departmentId: String(formData.get("departmentId") ?? ""),
     title: String(formData.get("title") ?? ""),
@@ -138,6 +151,7 @@ export async function createSopAction(formData: FormData) {
 }
 
 export async function updateCompanySettingsAction(formData: FormData) {
+  await assertAnyRole(["ceo"]);
   await updateCompanySettings({
     name: String(formData.get("name") ?? ""),
     code: String(formData.get("code") ?? ""),
