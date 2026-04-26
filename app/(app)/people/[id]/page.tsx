@@ -26,7 +26,7 @@ import { formatVND, formatCompactVND, formatPercent } from "@/lib/utils";
 import { Target, Wallet, TrendingUp, Award } from "lucide-react";
 import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
 import { hasAnyRole } from "@/lib/auth/permissions";
-import { updateEmployeeStatusAction } from "@/app/(app)/workspace/actions";
+import { updateEmployeeStatusAction, updateEmployeeJobTitleAction } from "@/app/(app)/workspace/actions";
 
 export default async function EmployeeDetailPage({
   params,
@@ -156,6 +156,25 @@ export default async function EmployeeDetailPage({
             <div className="w-full mt-4 space-y-2 text-sm text-left">
               <Row k="Phòng ban" v={dept ? <Link href={`/departments/${dept.id}`} className="text-indigo-600">{dept.name}</Link> : "—"} />
               <Row k="Manager" v={manager?.full_name ?? "—"} />
+              <Row
+                k="Chức danh"
+                v={
+                  canEditStatus ? (
+                    <form action={updateEmployeeJobTitleAction} className="flex items-center gap-1">
+                      <input type="hidden" name="employeeId" value={emp.id} />
+                      <input
+                        name="jobTitle"
+                        defaultValue={emp.job_title ?? ""}
+                        placeholder="Nhập chức danh"
+                        className="h-7 w-36 rounded-lg border border-[var(--line-soft)] bg-white px-2 text-xs"
+                      />
+                      <Button type="submit" size="sm" className="h-7 text-xs px-2 shrink-0">Lưu</Button>
+                    </form>
+                  ) : (
+                    emp.job_title ?? "—"
+                  )
+                }
+              />
               <Row k="Ngày vào" v={emp.join_date ?? "—"} />
               <Row k="Loại HĐ" v={emp.employment_type} />
               <Row k="Lương cơ bản" v={formatVND(emp.base_salary)} />

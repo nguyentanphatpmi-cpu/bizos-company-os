@@ -63,6 +63,7 @@ function mkEmp(
     position_id: position,
     manager_id: manager,
     join_date: "2024-01-01",
+    job_title: position,
     status: "active",
     base_salary: salary,
     employment_type: "fulltime",

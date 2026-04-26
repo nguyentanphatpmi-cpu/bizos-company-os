@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createDepartment, createEmployee, updateEmployeeStatus } from "@/lib/repositories/org";
+import { createDepartment, createEmployee, updateEmployeeStatus, updateEmployeeJobTitle } from "@/lib/repositories/org";
 import { createKpi, recordKpiActual } from "@/lib/repositories/kpi";
 import { createTask, recordTaskOutput } from "@/lib/repositories/operations";
 import { createAccountingEntry, saveDepartmentBudget } from "@/lib/repositories/finance";
@@ -24,6 +24,15 @@ export async function createDepartmentAction(formData: FormData) {
   revalidatePath("/settings");
 }
 
+export async function updateEmployeeJobTitleAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin"]);
+  const employeeId = String(formData.get("employeeId") ?? "");
+  const jobTitle = String(formData.get("jobTitle") ?? "");
+  await updateEmployeeJobTitle(employeeId, jobTitle);
+  revalidatePath(`/people/${employeeId}`);
+  revalidatePath("/people");
+}
+
 export async function updateEmployeeStatusAction(formData: FormData) {
   await assertAnyRole(["ceo", "hr_admin"]);
   const employeeId = String(formData.get("employeeId") ?? "");
@@ -38,6 +47,7 @@ export async function createEmployeeAction(formData: FormData) {
   await createEmployee({
     fullName: String(formData.get("fullName") ?? ""),
     email: String(formData.get("email") ?? ""),
+    jobTitle: String(formData.get("jobTitle") ?? ""),
     departmentId: String(formData.get("departmentId") ?? ""),
     managerId: String(formData.get("managerId") ?? ""),
     baseSalary: Number(formData.get("baseSalary") ?? 0),

@@ -49,6 +49,7 @@ export type Database = {
           position_id: string | null;
           manager_id: string | null;
           join_date: string | null;
+          job_title: string | null;
           status: "active" | "onboarding" | "on_leave" | "terminated";
           base_salary: number | null;
           employment_type: "fulltime" | "parttime" | "contract" | "intern" | "freelance" | null;

@@ -68,6 +68,7 @@ export async function createDepartment(input: {
 export async function createEmployee(input: {
   fullName: string;
   email: string;
+  jobTitle?: string;
   departmentId?: string;
   managerId?: string;
   baseSalary: number;
@@ -124,6 +125,7 @@ export async function createEmployee(input: {
     auth_user_id: authUserId,
     full_name: input.fullName,
     email: input.email || null,
+    job_title: input.jobTitle || null,
     department_id: input.departmentId || null,
     manager_id: input.managerId || null,
     base_salary: input.baseSalary,
@@ -142,6 +144,31 @@ export async function createEmployee(input: {
     entity: "employees",
     entityId: data?.id ?? null,
     after: payload,
+  });
+}
+
+export async function updateEmployeeJobTitle(employeeId: string, jobTitle: string) {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
+  if (!context.companyId) return;
+
+  const db = await getDbClientOrThrow();
+  const employeesTable = db.from("employees") as unknown as {
+    update: (values: Record<string, unknown>) => {
+      eq: (col: string, val: string) => { eq: (col: string, val: string) => Promise<unknown> };
+    };
+  };
+
+  await employeesTable
+    .update({ job_title: jobTitle || null })
+    .eq("id", employeeId)
+    .eq("company_id", context.companyId);
+
+  await writeAuditLog({
+    action: "employee.job_title_update",
+    entity: "employees",
+    entityId: employeeId,
+    after: { job_title: jobTitle || null },
   });
 }
 

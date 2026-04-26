@@ -60,6 +60,7 @@ export default async function PeoplePage() {
         </Link>
       ),
     },
+    { key: "job_title", header: "Chức danh", render: (e) => e.job_title ?? "—" },
     { key: "dept", header: "Phòng ban", render: (e) => e.dept_name },
     { key: "manager", header: "Manager", render: (e) => e.manager_name },
     {
@@ -139,9 +140,10 @@ export default async function PeoplePage() {
           <CardTitle className="text-sm">Thêm nhân sự mới</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createEmployeeAction} className="grid gap-3 md:grid-cols-6">
+          <form action={createEmployeeAction} className="grid gap-3 md:grid-cols-4">
             <Input name="fullName" placeholder="Họ tên" required />
             <Input name="email" type="email" placeholder="Email công việc" required />
+            <Input name="jobTitle" placeholder="Chức danh (VD: Marketing Manager)" />
             <select name="departmentId" className="h-11 rounded-2xl border border-[var(--line-soft)] bg-white px-3.5 text-sm text-[var(--text-strong)]">
               <option value="">Chọn phòng ban</option>
               {visibleDepts.map((department) => (
