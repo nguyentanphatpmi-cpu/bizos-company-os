@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createDepartment, createEmployee } from "@/lib/repositories/org";
+import { createDepartment, createEmployee, updateEmployeeStatus } from "@/lib/repositories/org";
 import { createKpi, recordKpiActual } from "@/lib/repositories/kpi";
 import { createTask, recordTaskOutput } from "@/lib/repositories/operations";
 import { createAccountingEntry, saveDepartmentBudget } from "@/lib/repositories/finance";
@@ -22,6 +22,15 @@ export async function createDepartmentAction(formData: FormData) {
   });
   revalidatePath("/departments");
   revalidatePath("/settings");
+}
+
+export async function updateEmployeeStatusAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin"]);
+  const employeeId = String(formData.get("employeeId") ?? "");
+  const status = String(formData.get("status") ?? "") as "active" | "onboarding" | "on_leave" | "terminated";
+  await updateEmployeeStatus(employeeId, status);
+  revalidatePath(`/people/${employeeId}`);
+  revalidatePath("/people");
 }
 
 export async function createEmployeeAction(formData: FormData) {

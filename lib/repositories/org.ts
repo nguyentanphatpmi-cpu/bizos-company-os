@@ -145,6 +145,31 @@ export async function createEmployee(input: {
   });
 }
 
+export async function updateEmployeeStatus(
+  employeeId: string,
+  status: "active" | "onboarding" | "on_leave" | "terminated",
+) {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
+  if (!context.companyId) return;
+
+  const db = await getDbClientOrThrow();
+  const employeesTable = db.from("employees") as unknown as {
+    update: (values: Record<string, unknown>) => {
+      eq: (col: string, val: string) => { eq: (col: string, val: string) => Promise<unknown> };
+    };
+  };
+
+  await employeesTable.update({ status }).eq("id", employeeId).eq("company_id", context.companyId);
+
+  await writeAuditLog({
+    action: "employee.status_update",
+    entity: "employees",
+    entityId: employeeId,
+    after: { status },
+  });
+}
+
 export async function updateCompanySettings(input: {
   name: string;
   code: string;

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiStatusBadge } from "@/components/kpi/KpiStatusBadge";
 import { AreaTrend } from "@/components/charts/AreaTrend";
@@ -23,6 +24,9 @@ import { buildKpiRows } from "@/lib/kpi/cascade";
 import { computePayroll } from "@/lib/compensation/ruleEngine";
 import { formatVND, formatCompactVND, formatPercent } from "@/lib/utils";
 import { Target, Wallet, TrendingUp, Award } from "lucide-react";
+import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { hasAnyRole } from "@/lib/auth/permissions";
+import { updateEmployeeStatusAction } from "@/app/(app)/workspace/actions";
 
 export default async function EmployeeDetailPage({
   params,
@@ -30,7 +34,7 @@ export default async function EmployeeDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [employees, departments, kpis, targets, actuals, tasks, payroll] = await Promise.all([
+  const [employees, departments, kpis, targets, actuals, tasks, payroll, authUser] = await Promise.all([
     fetchEmployees(),
     fetchDepartments(),
     fetchKpis(),
@@ -38,7 +42,10 @@ export default async function EmployeeDetailPage({
     fetchKpiActuals(),
     fetchTasks(),
     fetchPayroll(),
+    getAuthenticatedUser(),
   ]);
+  const ctx = await getUserContext(authUser);
+  const canEditStatus = hasAnyRole(ctx, ["ceo", "hr_admin"]);
 
   const emp = employees.find((e) => e.id === id);
   if (!emp) notFound();
@@ -95,7 +102,26 @@ export default async function EmployeeDetailPage({
       <PageHeader
         title={emp.full_name}
         description={`${dept?.name ?? "—"} · ${emp.code ?? ""} · ${emp.employment_type}`}
-        actions={<Badge variant={emp.status === "active" ? "success" : "outline"}>{emp.status}</Badge>}
+        actions={
+          canEditStatus ? (
+            <form action={updateEmployeeStatusAction} className="flex items-center gap-2">
+              <input type="hidden" name="employeeId" value={emp.id} />
+              <select
+                name="status"
+                defaultValue={emp.status}
+                className="h-9 rounded-xl border border-[var(--line-soft)] bg-white px-3 text-sm text-[var(--text-strong)]"
+              >
+                <option value="active">active</option>
+                <option value="onboarding">onboarding</option>
+                <option value="on_leave">on_leave</option>
+                <option value="terminated">terminated</option>
+              </select>
+              <Button type="submit" size="sm">Cập nhật</Button>
+            </form>
+          ) : (
+            <Badge variant={emp.status === "active" ? "success" : "outline"}>{emp.status}</Badge>
+          )
+        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
@@ -107,9 +133,26 @@ export default async function EmployeeDetailPage({
             </div>
             <div className="mt-3 font-semibold text-zinc-900">{emp.full_name}</div>
             <div className="text-xs text-zinc-500">{emp.email}</div>
-            <Badge variant={emp.status === "active" ? "success" : "outline"} className="mt-2">
-              {emp.status}
-            </Badge>
+            {canEditStatus ? (
+              <form action={updateEmployeeStatusAction} className="mt-2 flex items-center gap-2">
+                <input type="hidden" name="employeeId" value={emp.id} />
+                <select
+                  name="status"
+                  defaultValue={emp.status}
+                  className="h-8 rounded-xl border border-[var(--line-soft)] bg-white px-2.5 text-xs text-[var(--text-strong)]"
+                >
+                  <option value="active">active</option>
+                  <option value="onboarding">onboarding</option>
+                  <option value="on_leave">on_leave</option>
+                  <option value="terminated">terminated</option>
+                </select>
+                <Button type="submit" size="sm" className="h-8 text-xs px-3">Lưu</Button>
+              </form>
+            ) : (
+              <Badge variant={emp.status === "active" ? "success" : "outline"} className="mt-2">
+                {emp.status}
+              </Badge>
+            )}
             <div className="w-full mt-4 space-y-2 text-sm text-left">
               <Row k="Phòng ban" v={dept ? <Link href={`/departments/${dept.id}`} className="text-indigo-600">{dept.name}</Link> : "—"} />
               <Row k="Manager" v={manager?.full_name ?? "—"} />
