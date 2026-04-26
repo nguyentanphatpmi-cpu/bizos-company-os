@@ -66,6 +66,15 @@ export type Database = {
           scope_team_id: string | null;
           created_at: string;
         };
+        Insert: {
+          id?: string;
+          auth_user_id: string;
+          company_id: string;
+          role: "ceo" | "cfo" | "hr_admin" | "dept_head" | "team_lead" | "employee" | "auditor";
+          scope_department_id?: string | null;
+          scope_team_id?: string | null;
+          created_at?: string;
+        };
       };
       user_preferences: {
         Row: {

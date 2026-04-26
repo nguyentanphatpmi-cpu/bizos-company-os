@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createRawClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { appEnv, hasSupabaseEnv as hasSupabaseEnvInternal } from "@/lib/env";
 
@@ -44,15 +45,12 @@ export async function createClientOrNull() {
 }
 
 export async function createServiceRoleClient() {
-  const cookieStore = await cookies();
   const key = appEnv.supabaseServiceRoleKey;
   if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
-  return createServerClient(appEnv.supabaseUrl, key, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll() {},
-    },
+  // Must use createClient (not createServerClient) so the service role key is used
+  // as the Authorization header — createServerClient would override it with the
+  // user's session cookie, keeping RLS active.
+  return createRawClient(appEnv.supabaseUrl, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 }
