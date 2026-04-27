@@ -248,10 +248,10 @@ export async function deleteEmployee(employeeId: string) {
   const context = await getUserContext(user);
   if (!context.companyId) return;
 
-  const db = await getDbClientOrThrow();
-  
-  // 1. Get employee data to check email and auth_user_id
-  const { data: employee, error: fetchError } = await db
+  // Use service role to bypass RLS on all operations
+  const adminDb = await createServiceRoleClient();
+
+  const { data: employee, error: fetchError } = await adminDb
     .from("employees")
     .select("email, auth_user_id, full_name")
     .eq("id", employeeId)
@@ -262,18 +262,26 @@ export async function deleteEmployee(employeeId: string) {
     throw new Error("Không tìm thấy nhân sự hoặc bạn không có quyền.");
   }
 
-  // 2. Prevent deleting protected demo accounts
   if (employee.email && PROTECTED_EMAILS.includes(employee.email)) {
     throw new Error("Không thể xóa nhân sự demo mặc định của hệ thống.");
   }
 
-  // 3. Prevent self-deletion
   if (employee.auth_user_id === context.authUserId) {
     throw new Error("Bạn không thể tự xóa chính mình.");
   }
 
-  // 4. Delete from employees table
-  const { error: deleteError } = await db
+  // Cleanup related records to prevent FK constraint violations
+  await adminDb.from("payroll_entries").delete().eq("employee_id", employeeId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (adminDb.from("tasks") as any).update({ assignee_id: null }).eq("assignee_id", employeeId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (adminDb.from("kpis") as any).update({ owner_employee_id: null }).eq("owner_employee_id", employeeId);
+  if (employee.auth_user_id) {
+    await adminDb.from("user_roles").delete().eq("auth_user_id", employee.auth_user_id);
+    await adminDb.from("user_preferences").delete().eq("auth_user_id", employee.auth_user_id);
+  }
+
+  const { error: deleteError } = await adminDb
     .from("employees")
     .delete()
     .eq("id", employeeId)
@@ -283,16 +291,13 @@ export async function deleteEmployee(employeeId: string) {
     throw new Error(`Lỗi khi xóa nhân sự: ${deleteError.message}`);
   }
 
-  // 5. If has auth_user_id, delete from Supabase Auth
   if (employee.auth_user_id && !isDemoMode()) {
-    const supabaseAdmin = await createServiceRoleClient();
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(employee.auth_user_id);
+    const { error: authError } = await adminDb.auth.admin.deleteUser(employee.auth_user_id);
     if (authError) {
       console.error("Lỗi xóa user Supabase Auth:", authError);
     }
   }
 
-  // 6. Audit Log
   await writeAuditLog({
     action: "employee.delete",
     entity: "employees",

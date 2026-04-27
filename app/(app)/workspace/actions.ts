@@ -179,11 +179,19 @@ export async function updateCompanySettingsAction(formData: FormData) {
   });
   revalidatePath("/settings");
 }
-export async function deleteEmployeeAction(formData: FormData) {
-  await assertAnyRole(["ceo", "hr_admin"]);
-  const employeeId = String(formData.get("employeeId") ?? "");
-  if (!employeeId) return;
-  await deleteEmployee(employeeId);
-  revalidatePath("/people");
-  revalidatePath("/departments");
+export async function deleteEmployeeAction(
+  _prevState: { error: string } | null,
+  formData: FormData,
+): Promise<{ error: string } | null> {
+  try {
+    await assertAnyRole(["ceo", "hr_admin"]);
+    const employeeId = String(formData.get("employeeId") ?? "");
+    if (!employeeId) return { error: "Thiếu ID nhân sự." };
+    await deleteEmployee(employeeId);
+    revalidatePath("/people");
+    revalidatePath("/departments");
+    return null;
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Đã có lỗi xảy ra." };
+  }
 }
