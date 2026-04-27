@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createDepartment, createEmployee, updateEmployeeStatus, updateEmployeeJobTitle } from "@/lib/repositories/org";
+import { createDepartment, createEmployee, updateEmployeeStatus, updateEmployeeJobTitle, deleteEmployee } from "@/lib/repositories/org";
 import { createKpi, recordKpiActual } from "@/lib/repositories/kpi";
 import { createTask, recordTaskOutput } from "@/lib/repositories/operations";
 import { createAccountingEntry, saveDepartmentBudget } from "@/lib/repositories/finance";
@@ -178,4 +178,12 @@ export async function updateCompanySettingsAction(formData: FormData) {
     timezone: String(formData.get("timezone") ?? "Asia/Ho_Chi_Minh"),
   });
   revalidatePath("/settings");
+}
+export async function deleteEmployeeAction(formData: FormData) {
+  await assertAnyRole(["ceo", "hr_admin"]);
+  const employeeId = String(formData.get("employeeId") ?? "");
+  if (!employeeId) return;
+  await deleteEmployee(employeeId);
+  revalidatePath("/people");
+  revalidatePath("/departments");
 }

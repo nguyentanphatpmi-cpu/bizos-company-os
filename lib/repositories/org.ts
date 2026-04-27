@@ -5,16 +5,22 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/env";
 
 export async function listDepartments() {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
   return withDemoFallback(demo.demoDepartments, async (db) => {
-    const { data, error } = await db.from("departments").select("*").order("name");
+    if (!context.companyId) return [];
+    const { data, error } = await db.from("departments").select("*").eq("company_id", context.companyId).order("name");
     if (error) throw error;
     return data ?? [];
   });
 }
 
 export async function listEmployees() {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
   return withDemoFallback(demo.demoEmployees, async (db) => {
-    const { data, error } = await db.from("employees").select("*").order("full_name");
+    if (!context.companyId) return [];
+    const { data, error } = await db.from("employees").select("*").eq("company_id", context.companyId).order("full_name");
     if (error) throw error;
     return data ?? [];
   });
@@ -89,7 +95,7 @@ export async function createEmployee(input: {
 
   if (input.email && !isDemoMode()) {
     const supabaseAdmin = await createServiceRoleClient();
-    const defaultPassword = "Abcd@1234";
+    const defaultPassword = process.env.DEFAULT_EMPLOYEE_PASSWORD || crypto.randomUUID().slice(0, 8);
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: input.email,
@@ -224,5 +230,73 @@ export async function updateCompanySettings(input: {
     entity: "companies",
     entityId: context.companyId,
     after: input,
+  });
+}
+
+export const PROTECTED_EMAILS = [
+  "ceo@bizos.demo",
+  "hr@bizos.demo",
+  "cfo@bizos.demo",
+  "sales.head@bizos.demo",
+  "mkt.head@bizos.demo",
+  "ops.head@bizos.demo",
+  "cs.head@bizos.demo",
+];
+
+export async function deleteEmployee(employeeId: string) {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
+  if (!context.companyId) return;
+
+  const db = await getDbClientOrThrow();
+  
+  // 1. Get employee data to check email and auth_user_id
+  const { data: employee, error: fetchError } = await db
+    .from("employees")
+    .select("email, auth_user_id, full_name")
+    .eq("id", employeeId)
+    .eq("company_id", context.companyId)
+    .single();
+
+  if (fetchError || !employee) {
+    throw new Error("Không tìm thấy nhân sự hoặc bạn không có quyền.");
+  }
+
+  // 2. Prevent deleting protected demo accounts
+  if (employee.email && PROTECTED_EMAILS.includes(employee.email)) {
+    throw new Error("Không thể xóa nhân sự demo mặc định của hệ thống.");
+  }
+
+  // 3. Prevent self-deletion
+  if (employee.auth_user_id === context.authUserId) {
+    throw new Error("Bạn không thể tự xóa chính mình.");
+  }
+
+  // 4. Delete from employees table
+  const { error: deleteError } = await db
+    .from("employees")
+    .delete()
+    .eq("id", employeeId)
+    .eq("company_id", context.companyId);
+
+  if (deleteError) {
+    throw new Error(`Lỗi khi xóa nhân sự: ${deleteError.message}`);
+  }
+
+  // 5. If has auth_user_id, delete from Supabase Auth
+  if (employee.auth_user_id && !isDemoMode()) {
+    const supabaseAdmin = await createServiceRoleClient();
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(employee.auth_user_id);
+    if (authError) {
+      console.error("Lỗi xóa user Supabase Auth:", authError);
+    }
+  }
+
+  // 6. Audit Log
+  await writeAuditLog({
+    action: "employee.delete",
+    entity: "employees",
+    entityId: employeeId,
+    before: employee,
   });
 }

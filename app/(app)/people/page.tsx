@@ -13,7 +13,9 @@ import { createEmployeeAction } from "@/app/(app)/workspace/actions";
 import { formatCompactVND } from "@/lib/utils";
 import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
 import { deptScopeFilter, teamScopeFilter } from "@/lib/auth/permissions";
-import { Users, UserPlus, Briefcase, TrendingUp } from "lucide-react";
+import { Users, UserPlus, Briefcase, TrendingUp, Trash2 } from "lucide-react";
+import { PROTECTED_EMAILS } from "@/lib/repositories/org";
+import { DeleteEmployeeButton } from "@/components/people/DeleteEmployeeButton";
 import type { Employee } from "@/types/domain";
 
 export default async function PeoplePage() {
@@ -71,11 +73,18 @@ export default async function PeoplePage() {
     },
     { key: "kpi", header: "KPI", align: "right", render: (e) => String(e.kpi_count) },
     {
-      key: "status",
+      key: "actions",
       header: "",
       align: "right",
       render: (e) => (
-        <Badge variant={e.status === "active" ? "success" : "outline"}>{e.status}</Badge>
+        <div className="flex items-center justify-end gap-2">
+          <Badge variant={e.status === "active" ? "success" : "outline"}>{e.status}</Badge>
+          <DeleteEmployeeButton
+            employeeId={e.id}
+            employeeName={e.full_name}
+            disabled={e.auth_user_id === user?.id || (e.email ? PROTECTED_EMAILS.includes(e.email) : false)}
+          />
+        </div>
       ),
     },
   ];
