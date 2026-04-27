@@ -65,6 +65,8 @@ export type Database = {
           role: "ceo" | "cfo" | "hr_admin" | "dept_head" | "team_lead" | "employee" | "auditor";
           scope_department_id: string | null;
           scope_team_id: string | null;
+          expires_at: string | null;
+          granted_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -74,6 +76,8 @@ export type Database = {
           role: "ceo" | "cfo" | "hr_admin" | "dept_head" | "team_lead" | "employee" | "auditor";
           scope_department_id?: string | null;
           scope_team_id?: string | null;
+          expires_at?: string | null;
+          granted_by?: string | null;
           created_at?: string;
         };
       };

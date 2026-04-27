@@ -25,7 +25,7 @@ import { computePayroll } from "@/lib/compensation/ruleEngine";
 import { formatVND, formatCompactVND, formatPercent } from "@/lib/utils";
 import { Target, Wallet, TrendingUp, Award } from "lucide-react";
 import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
-import { hasAnyRole } from "@/lib/auth/permissions";
+import { hasAnyRole, canViewSalary } from "@/lib/auth/permissions";
 import { updateEmployeeStatusAction, updateEmployeeJobTitleAction } from "@/app/(app)/workspace/actions";
 
 export default async function EmployeeDetailPage({
@@ -49,6 +49,8 @@ export default async function EmployeeDetailPage({
 
   const emp = employees.find((e) => e.id === id);
   if (!emp) notFound();
+
+  const canSeeSalary = canViewSalary(ctx, emp.id);
 
   const dept = departments.find((d) => d.id === emp.department_id);
   const manager = employees.find((m) => m.id === emp.manager_id);
@@ -177,7 +179,7 @@ export default async function EmployeeDetailPage({
               />
               <Row k="Ngày vào" v={emp.join_date ?? "—"} />
               <Row k="Loại HĐ" v={emp.employment_type} />
-              <Row k="Lương cơ bản" v={formatVND(emp.base_salary)} />
+              {canSeeSalary && <Row k="Lương cơ bản" v={formatVND(emp.base_salary)} />}
             </div>
           </CardContent>
         </Card>
@@ -197,17 +199,21 @@ export default async function EmployeeDetailPage({
             value={String(empTasks.filter((t) => t.status !== "done" && t.status !== "cancelled").length)}
             accent="violet"
           />
-          <KpiCard
-            label="Gross pay"
-            value={formatCompactVND(simulated.gross_pay)}
-            accent="emerald"
-            icon={<Wallet className="h-3.5 w-3.5" />}
-          />
-          <KpiCard
-            label="Cost to company"
-            value={formatCompactVND(simulated.company_cost)}
-            accent="amber"
-          />
+          {canSeeSalary && (
+            <KpiCard
+              label="Gross pay"
+              value={formatCompactVND(simulated.gross_pay)}
+              accent="emerald"
+              icon={<Wallet className="h-3.5 w-3.5" />}
+            />
+          )}
+          {canSeeSalary && (
+            <KpiCard
+              label="Cost to company"
+              value={formatCompactVND(simulated.company_cost)}
+              accent="amber"
+            />
+          )}
 
           <Card className="col-span-2">
             <CardHeader className="pb-2">
@@ -218,22 +224,24 @@ export default async function EmployeeDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-indigo-600" />
-                Compensation breakdown (mô phỏng)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-1.5">
-              <Row k="Lương cơ bản" v={formatVND(simulated.base_salary)} />
-              <Row k="Phụ cấp" v={formatVND(simulated.allowance)} />
-              <Row k="KPI bonus" v={formatVND(simulated.kpi_bonus)} />
-              <Row k="Team bonus" v={formatVND(simulated.team_bonus)} />
-              <Row k={<strong>Gross pay</strong>} v={<strong>{formatVND(simulated.gross_pay)}</strong>} />
-              <Row k={<strong>Net pay</strong>} v={<strong>{formatVND(simulated.net_pay)}</strong>} />
-            </CardContent>
-          </Card>
+          {canSeeSalary && (
+            <Card className="col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  Compensation breakdown (mô phỏng)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-1.5">
+                <Row k="Lương cơ bản" v={formatVND(simulated.base_salary)} />
+                <Row k="Phụ cấp" v={formatVND(simulated.allowance)} />
+                <Row k="KPI bonus" v={formatVND(simulated.kpi_bonus)} />
+                <Row k="Team bonus" v={formatVND(simulated.team_bonus)} />
+                <Row k={<strong>Gross pay</strong>} v={<strong>{formatVND(simulated.gross_pay)}</strong>} />
+                <Row k={<strong>Net pay</strong>} v={<strong>{formatVND(simulated.net_pay)}</strong>} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

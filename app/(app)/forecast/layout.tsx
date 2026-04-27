@@ -1,6 +1,6 @@
-import { requireAnyRole } from "@/lib/auth/guard";
+import { requireRouteAccess } from "@/lib/auth/guard";
 
 export default async function ForecastLayout({ children }: { children: React.ReactNode }) {
-  await requireAnyRole(["ceo", "cfo", "dept_head"]);
+  await requireRouteAccess("/forecast");
   return <>{children}</>;
 }

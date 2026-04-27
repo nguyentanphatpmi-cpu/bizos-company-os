@@ -1,6 +1,6 @@
-import { requireAnyRole } from "@/lib/auth/guard";
+import { requireRouteAccess } from "@/lib/auth/guard";
 
 export default async function AuditLayout({ children }: { children: React.ReactNode }) {
-  await requireAnyRole(["ceo", "cfo", "auditor"]);
+  await requireRouteAccess("/audit");
   return <>{children}</>;
 }

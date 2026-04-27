@@ -18,7 +18,7 @@ export function hasSupabaseEnv() {
 }
 
 export function isDemoMode() {
-  return appEnv.demoMode || !hasSupabaseEnv();
+  return appEnv.demoMode === true;
 }
 
 export function isBuildTime() {

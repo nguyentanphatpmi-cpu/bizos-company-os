@@ -1,10 +1,24 @@
 import * as demo from "@/lib/queries/demo";
 import { writeAuditLog } from "@/lib/repositories/audit";
 import { getAuthenticatedUser, getDbClientOrThrow, getUserContext, withDemoFallback } from "@/lib/repositories/shared";
+import { deptScopeFilter, isScopedEmployee, isScopedTeamLead } from "@/lib/auth/permissions";
 
 export async function listKpis() {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
+  const deptScope = deptScopeFilter(context);
+
   return withDemoFallback(demo.demoKpis, async (db) => {
-    const { data, error } = await db.from("kpis").select("*").order("created_at");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q = db.from("kpis").select("*") as any;
+    if (deptScope !== null) {
+      q = q.in("owner_department_id", [...deptScope]);
+    } else if (isScopedTeamLead(context) && context.scopedDepartmentIds.length > 0) {
+      q = q.in("owner_department_id", [...context.scopedDepartmentIds]);
+    } else if (isScopedEmployee(context) && context.employeeId) {
+      q = q.eq("owner_employee_id", context.employeeId);
+    }
+    const { data, error } = await q.order("created_at");
     if (error) throw error;
     return data ?? [];
   });
@@ -96,6 +110,10 @@ export async function recordKpiActual(input: { kpiId: string; period: string; ac
   if (!context.companyId) return;
 
   const db = await getDbClientOrThrow();
+
+  const { data: kpi } = await db.from("kpis").select("id").eq("id", input.kpiId).eq("company_id", context.companyId).single();
+  if (!kpi) throw new Error("Unauthorized: KPI không thuộc công ty của bạn");
+
   const actualsTable = db.from("kpi_actuals") as unknown as {
     upsert: (values: Record<string, unknown>, options?: Record<string, unknown>) => Promise<unknown>;
   };

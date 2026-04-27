@@ -1,9 +1,9 @@
 import { TabsNav } from "@/components/ui/tabs";
 import { tServer } from "@/lib/i18n/server";
-import { requireAnyRole } from "@/lib/auth/guard";
+import { requireRouteAccess } from "@/lib/auth/guard";
 
 export default async function FinanceLayout({ children }: { children: React.ReactNode }) {
-  await requireAnyRole(["ceo", "cfo", "auditor"]);
+  await requireRouteAccess("/finance");
   const { t } = await tServer();
   return (
     <div>

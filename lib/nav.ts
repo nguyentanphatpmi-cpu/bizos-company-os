@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { DICT } from "./i18n/dict";
 import type { AppRole } from "./auth/permissions";
+import { ROUTE_ROLES } from "./auth/routes";
 
 export type { AppRole };
 
@@ -57,7 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/org", labelKey: "nav.org", icon: Network },
       { href: "/departments", labelKey: "nav.departments", icon: Building2 },
       { href: "/people", labelKey: "nav.people", icon: Users },
-      { href: "/recruiting", labelKey: "nav.recruiting", icon: UserPlus, roles: ["ceo", "hr_admin", "dept_head"] },
+      { href: "/recruiting", labelKey: "nav.recruiting", icon: UserPlus, roles: ROUTE_ROLES["/recruiting"] },
     ],
   },
   {
@@ -69,25 +70,25 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/okr", labelKey: "nav.okr", icon: Flag },
       { href: "/operations", labelKey: "nav.operations", icon: ListChecks },
       { href: "/projects", labelKey: "nav.projects", icon: FolderKanban },
-      { href: "/forecast", labelKey: "nav.forecast", icon: TrendingUp, roles: ["ceo", "cfo", "dept_head"] },
+      { href: "/forecast", labelKey: "nav.forecast", icon: TrendingUp, roles: ROUTE_ROLES["/forecast"] },
     ],
   },
   {
     id: "finance",
     labelKey: "sidebar.group.finance",
     items: [
-      { href: "/compensation", labelKey: "nav.compensation", icon: Wallet, roles: ["ceo", "cfo", "hr_admin", "dept_head"] },
-      { href: "/finance", labelKey: "nav.finance", icon: Landmark, roles: ["ceo", "cfo", "auditor"] },
-      { href: "/reports", labelKey: "nav.reports", icon: FileBarChart, roles: ["ceo", "cfo", "hr_admin", "dept_head", "auditor"] },
+      { href: "/compensation", labelKey: "nav.compensation", icon: Wallet, roles: ROUTE_ROLES["/compensation"] },
+      { href: "/finance", labelKey: "nav.finance", icon: Landmark, roles: ROUTE_ROLES["/finance"] },
+      { href: "/reports", labelKey: "nav.reports", icon: FileBarChart, roles: ROUTE_ROLES["/reports"] },
     ],
   },
   {
     id: "governance",
     labelKey: "sidebar.group.governance",
     items: [
-      { href: "/approvals", labelKey: "nav.approvals", icon: CheckSquare, roles: ["ceo", "cfo", "hr_admin", "dept_head", "team_lead"] },
-      { href: "/audit", labelKey: "nav.audit", icon: History, roles: ["ceo", "auditor", "cfo"] },
-      { href: "/settings", labelKey: "nav.settings", icon: Settings, roles: ["ceo", "cfo", "hr_admin"] },
+      { href: "/approvals", labelKey: "nav.approvals", icon: CheckSquare, roles: ROUTE_ROLES["/approvals"] },
+      { href: "/audit", labelKey: "nav.audit", icon: History, roles: ROUTE_ROLES["/audit"] },
+      { href: "/settings", labelKey: "nav.settings", icon: Settings, roles: ROUTE_ROLES["/settings"] },
     ],
   },
   {

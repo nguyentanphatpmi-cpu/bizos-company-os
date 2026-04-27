@@ -1,6 +1,6 @@
-import { requireAnyRole } from "@/lib/auth/guard";
+import { requireRouteAccess } from "@/lib/auth/guard";
 
 export default async function RecruitingLayout({ children }: { children: React.ReactNode }) {
-  await requireAnyRole(["ceo", "hr_admin", "dept_head"]);
+  await requireRouteAccess("/recruiting");
   return <>{children}</>;
 }

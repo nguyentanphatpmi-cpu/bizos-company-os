@@ -1,6 +1,7 @@
 import * as demo from "@/lib/queries/demo";
 import { writeAuditLog } from "@/lib/repositories/audit";
 import { getAuthenticatedUser, getUserContext, withDemoFallback } from "@/lib/repositories/shared";
+import { hasAnyRole } from "@/lib/auth/permissions";
 
 export async function listAlerts() {
   return withDemoFallback(demo.demoAlerts, async (db) => {
@@ -99,6 +100,9 @@ export async function resolveAlert(alertId: string) {
 export async function setApprovalStatus(approvalId: string, status: "approved" | "rejected" | "cancelled") {
   const [user, approvals] = await Promise.all([getAuthenticatedUser(), listApprovals()]);
   const context = await getUserContext(user);
+  
+  if (!hasAnyRole(context, ["ceo", "cfo", "hr_admin", "dept_head", "team_lead"])) throw new Error("Unauthorized");
+  
   const approval = approvals.find((item) => item.id === approvalId);
   if (!approval || !context.companyId) return;
 

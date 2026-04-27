@@ -4,12 +4,12 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Footer } from "@/components/layout/Footer";
 import { AppContextProvider } from "@/components/layout/AppContext";
-import { getAuthenticatedUser, getUserContext } from "@/lib/repositories/shared";
+import { requireAuthenticated } from "@/lib/auth/guard";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const context = await requireAuthenticated();
   const [supabase, locale] = await Promise.all([createClientOrNull(), getLocale()]);
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const context = await getUserContext(user ?? (await getAuthenticatedUser()));
   const roleLabel = context.roles[0]?.toUpperCase() ?? "CEO";
 
   return (

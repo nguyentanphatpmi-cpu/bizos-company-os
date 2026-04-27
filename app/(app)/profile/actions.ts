@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { saveUserPreferences, updateEmployeeProfile } from "@/lib/repositories/profile";
 
+import { assertAuthenticated } from "@/lib/auth/guard";
+
 export async function updateProfileAction(formData: FormData) {
+  await assertAuthenticated();
   await updateEmployeeProfile({
     fullName: String(formData.get("fullName") ?? ""),
     phone: String(formData.get("phone") ?? ""),
@@ -14,6 +17,7 @@ export async function updateProfileAction(formData: FormData) {
 }
 
 export async function updatePreferencesAction(formData: FormData) {
+  await assertAuthenticated();
   await saveUserPreferences({
     locale: String(formData.get("locale") ?? "vi"),
     timezone: String(formData.get("timezone") ?? "Asia/Ho_Chi_Minh"),

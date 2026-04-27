@@ -3,10 +3,14 @@ import { writeAuditLog } from "@/lib/repositories/audit";
 import { getAuthenticatedUser, getDbClientOrThrow, getUserContext, withDemoFallback } from "@/lib/repositories/shared";
 
 export async function listAccountingEntries() {
+  const user = await getAuthenticatedUser();
+  const context = await getUserContext(user);
   return withDemoFallback(demo.demoAccounting, async (db) => {
+    if (!context.companyId) return [];
     const { data, error } = await db
       .from("accounting_entries")
       .select("*")
+      .eq("company_id", context.companyId)
       .order("entry_date", { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -58,10 +62,16 @@ export async function saveDepartmentBudget(input: { departmentId: string; budget
 
   const db = await getDbClientOrThrow();
   const departmentsTable = db.from("departments") as unknown as {
-    update: (values: Record<string, unknown>) => { eq: (column: string, value: string) => Promise<unknown> };
+    update: (values: Record<string, unknown>) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => Promise<unknown>;
+      };
+    };
   };
 
-  await departmentsTable.update({ budget_monthly: input.budgetMonthly }).eq("id", input.departmentId);
+  await departmentsTable.update({ budget_monthly: input.budgetMonthly })
+    .eq("id", input.departmentId)
+    .eq("company_id", context.companyId);
   await writeAuditLog({
     action: "department.budget.update",
     entity: "departments",
